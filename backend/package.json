@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Fidea backend API built with NestJS, PostgreSQL, Prisma, JWT RBAC, Flutterwave, BullMQ, Schedule, Pino, Nodemailer, Swagger.",
   "scripts": {
-    "build": "cd backend && npx prisma generate && npm run build"
-    "start": "nest start",
+    "build": "npx prisma generate && nest build",
+    "start": "node dist/main.js"
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
