@@ -2,9 +2,12 @@
   "name": "findea-backend-nestjs",
   "version": "1.0.0",
   "description": "Fidea backend API built with NestJS, PostgreSQL, Prisma, JWT RBAC, Flutterwave, BullMQ, Schedule, Pino, Nodemailer, Swagger.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "postinstall": "prisma generate",
-    "build": "npx prisma generate && nest build",
+    "postinstall": "npx prisma generate",
+    "build": "npx prisma generate && npx nest build",
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main.js",
@@ -12,6 +15,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"prisma/**/*.prisma\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts"
   },
