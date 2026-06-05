@@ -25,7 +25,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Findea API')
-    .setDescription('Backend API for Fidea frontend pages')
+    .setDescription('Backend API for Findea frontend pages')
     .setVersion('1.0')
     .addBearerAuth()
     .build();
