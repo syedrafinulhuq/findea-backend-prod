@@ -24,7 +24,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
 
   const config = new DocumentBuilder()
-    .setTitle('Fidea API')
+    .setTitle('Findea API')
     .setDescription('Backend API for Fidea frontend pages')
     .setVersion('1.0')
     .addBearerAuth()
