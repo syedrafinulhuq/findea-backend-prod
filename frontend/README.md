@@ -1,1 +1,0 @@
-# findea-frontend
