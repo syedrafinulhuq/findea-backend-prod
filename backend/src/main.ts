@@ -9,7 +9,11 @@ import { AppModule } from './app.module';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.useLogger(app.get(Logger));
-  app.use(helmet({ contentSecurityPolicy: false }));
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    hsts: false,                      // no HSTS over plain HTTP — would cause browsers to upgrade sub-resources to HTTPS
+    crossOriginOpenerPolicy: false,   // prevents COOP warning noise on non-HTTPS origins
+  }));
   app.use(compression());
 
   const rawOrigins = process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3001';
