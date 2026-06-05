@@ -2,11 +2,11 @@
 
 ---
 
-## SEC-01 — No Rate Limiting on Auth Endpoints
+## ✅ SEC-01 — No Rate Limiting on Auth Endpoints
 
 **File:** `src/main.ts`, `src/auth/`  
 **Severity:** HIGH — brute force / credential stuffing  
-**Status: OPEN** — Requires installing `@nestjs/throttler`.
+**Status: FIXED** — `@nestjs/throttler` installed. `ThrottlerModule` registered globally in `app.module.ts`. `@UseGuards(ThrottlerGuard) @Throttle(...)` applied to `login` (5/min), `register` (5/min), and `forgot-password` (3/min) in `auth.controller.ts`.
 
 There is no rate limiter anywhere. The `POST /auth/login`, `POST /auth/register`, and `POST /auth/forgot-password` endpoints can be called thousands of times per second with no throttling.
 
@@ -101,11 +101,11 @@ The `.env.example` sets `FRONTEND_URL=http://localhost:3000`. In production, red
 
 ---
 
-## SEC-08 — No Environment Variable Validation on Startup
+## ✅ SEC-08 — No Environment Variable Validation on Startup
 
 **File:** `src/app.module.ts`  
 **Severity:** MEDIUM  
-**Status: OPEN** — Requires installing `joi`.
+**Status: FIXED** — `joi` installed. `ConfigModule.forRoot()` now has a `validationSchema` that enforces all required vars (`DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `FLUTTERWAVE_SECRET_KEY`, `FRONTEND_URL`, etc.) at startup. App refuses to boot if any required variable is missing.
 
 `ConfigModule.forRoot({ isGlobal: true })` loads `.env` but does not validate that required variables are present. If `JWT_ACCESS_SECRET` is missing, the app starts silently and then crashes at runtime when a user logs in.
 

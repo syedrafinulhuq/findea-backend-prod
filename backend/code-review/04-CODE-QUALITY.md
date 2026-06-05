@@ -165,10 +165,10 @@ The `upsert` does nothing if the email already exists (the `update: {}` is a no-
 
 ---
 
-## QUAL-12 — No Health Check Endpoint
+## ✅ QUAL-12 — No Health Check Endpoint
 
 **Severity:** MEDIUM (production readiness)  
-**Status: OPEN**
+**Status: FIXED** — See INFRA-03. `GET /api/health` added via `@nestjs/terminus`.
 
 There is no `/api/health` or `/api/health/live` endpoint. Load balancers, container orchestrators, and uptime monitors need a health check to route traffic.
 
@@ -186,10 +186,10 @@ check() {
 
 ---
 
-## QUAL-13 — No Compression Middleware
+## ✅ QUAL-13 — No Compression Middleware
 
 **Severity:** LOW (performance)  
-**Status: OPEN**
+**Status: FIXED** — `compression` middleware added to `main.ts`. See INFRA-05.
 
 Response bodies (especially product lists) are served uncompressed. Add `compression` middleware for gzip:
 ```ts

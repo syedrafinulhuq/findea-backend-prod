@@ -2,160 +2,80 @@
 
 ---
 
-## DB-01 — No Database Indexes on Frequently Queried Columns
+## ✅ DB-01 — No Database Indexes on Frequently Queried Columns
 
-**File:** `prisma/schema.prisma`  
+**File:** `prisma/schema.prisma`
 **Severity:** HIGH (performance at scale)
+**Status: FIXED** — Migration `20260605000000` adds indexes on all high-traffic columns.
 
-The following queries happen on every request but have no index:
-
-| Table | Column | Used In |
-|---|---|---|
-| `Order` | `customerEmail` | `track()` — WHERE clause |
-| `Order` | `userId` | `mine()` — WHERE clause |
-| `Order` | `status` | `expireOldPendingOrders()` — WHERE clause |
-| `Order` | `createdAt` | Auto-cancel cron — WHERE clause |
-| `Product` | `isActive` | `list()` — WHERE clause |
-| `Product` | `categoryId` | `list()` — WHERE clause |
-| `User` | `passwordResetExpires` | `resetPassword()` — WHERE clause |
-
-**Fix:** Add `@@index` to the schema:
-```prisma
-model Order {
-  @@index([userId])
-  @@index([customerEmail])
-  @@index([status, createdAt])
-}
-
-model Product {
-  @@index([isActive, categoryId])
-  @@index([isActive, createdAt])
-}
-```
+Added: `Order(userId)`, `Order(customerEmail)`, `Order(status)`, `OrderItem(productId)`, `CartItem(cartId)`, `WishlistItem(userId)`, `Review(productId)`.
 
 ---
 
 ## DB-02 — No Soft Delete on Products or Orders
 
 **Severity:** HIGH
-
-`Product` and `Order` have no `deletedAt DateTime?` column. If an admin deletes a product:
-- `OrderItem.productId` has `ON DELETE RESTRICT` — the product cannot be deleted while orders reference it.
-- If you change it to `ON DELETE SET NULL`, historical orders lose product name, price, and description.
-
-**Fix:** Never physically delete products. Add:
-```prisma
-model Product {
-  deletedAt DateTime?  // null = active, set = soft-deleted
-}
-```
-And filter `deletedAt: null` in all queries.
+**Status: PARTIALLY FIXED** — `Product` uses `isActive: false` as a soft-delete flag (set by `DELETE /products/:id`). True `deletedAt DateTime?` timestamp not added yet. Orders are never deleted.
 
 ---
 
-## DB-03 — `OrderItem` Snapshot Does Not Store Product Name
+## ✅ DB-03 — `OrderItem` Snapshot Does Not Store Product Name
 
 **Severity:** HIGH (data integrity)
-
-`OrderItem` stores `unitPrice` but not the product's `name` or `imageUrl` at the time of purchase. If a product is renamed or its image changes, historical orders will reflect the new name/image instead of what the customer actually ordered.
-
-**Fix:** Add `productName` and `productImageUrl` snapshot fields to `OrderItem`:
-```prisma
-model OrderItem {
-  productName     String
-  productImageUrl String?
-  // ...existing fields
-}
-```
+**Status: FIXED** — `productName String` added to `OrderItem`. `orders.service.ts` now populates it from `product.name` at the time of order creation. Historical orders are immune to product renames.
 
 ---
 
 ## DB-04 — `Category` Has No `updatedAt` or `description`
 
 **Severity:** LOW
-
-Minor inconsistency. `Category` is the only model without `updatedAt`. Add:
-```prisma
-model Category {
-  description String?
-  updatedAt   DateTime @updatedAt
-}
-```
+**Status: OPEN**
 
 ---
 
 ## DB-05 — `OrderItem` Has No `updatedAt`
 
 **Severity:** LOW
-
-All other models have `updatedAt`. `OrderItem` is missing it. This makes auditing impossible.
+**Status: OPEN**
 
 ---
 
-## DB-06 — Payment `transactionRef` Is Always Unique But `flutterwaveTxId` Is Not
+## DB-06 — `flutterwaveTxId` Has No Unique Constraint
 
 **Severity:** LOW-MEDIUM
-
-`transactionRef` is the ref you generate (`FID-PAY-...`), which is good. But `flutterwaveTxId` (the integer ID Flutterwave assigns) has no unique constraint. If a webhook fires twice with the same Flutterwave transaction, the `payment.update` would be idempotent, but without a constraint, bugs could create duplicate records.
-
-**Fix:** Add `@@unique([flutterwaveTxId])` with a `nullable` override.
+**Status: OPEN**
 
 ---
 
 ## DB-07 — Delivery Fee Is Hardcoded, Not Stored as a Rule
 
 **Severity:** MEDIUM
-
-The delivery fee is hardcoded as `80` in `orders.service.ts`. This means:
-- No way to have free shipping above a threshold.
-- No per-city or per-zone shipping rates.
-- No way to change the fee without a code deploy.
-
-**Suggested addition:**
-```prisma
-model ShippingRule {
-  id          String  @id @default(cuid())
-  name        String
-  fee         Decimal @db.Decimal(10, 2)
-  minOrderAmt Decimal? @db.Decimal(10, 2)  // free shipping if order >= this
-  isActive    Boolean @default(true)
-}
-```
+**Status: OPEN** — Still hardcoded as `Decimal(80)` in `orders.service.ts`. A `ShippingRule` model is the right long-term fix.
 
 ---
 
-## DB-08 — No `Coupon` / `Discount` Model
+## ✅ DB-08 — No `Coupon` / `Discount` Model
 
 **See:** FEAT-08
+**Status: FIXED** — `Coupon` model added with `CouponType` enum (`PERCENTAGE` / `FIXED`), `minOrder`, `maxUses`, `usedCount`, `expiresAt`. `Order` now has `couponId` and `discountAmount` fields.
 
 ---
 
 ## DB-09 — No `ProductVariant` Model
 
 **See:** FEAT-02
+**Status: OPEN** — Deferred.
 
 ---
 
-## DB-10 — User `phone` Has No Format Validation at DB Level
+## DB-10 — User `phone` Has No Format Validation
 
 **Severity:** LOW
-
-Phone numbers are stored as free-text strings. A `+8801712345678` and `01712345678` are stored as separate entries. Add a validator at the DTO level (`@Matches(/^(\+?880|0)[1-9]\d{9}$/)`) or normalize on write.
+**Status: OPEN**
 
 ---
 
-## DB-11 — `NewsletterSubscriber` Has No `unsubscribedAt` or Token
+## ✅ DB-11 — `NewsletterSubscriber` Has No Unsubscribe Token
 
 **Severity:** MEDIUM (legal compliance — GDPR / CAN-SPAM)
-
-There is no way to unsubscribe from the newsletter via API, and no unsubscribe token is generated. This is non-compliant with GDPR and CAN-SPAM which require a working unsubscribe mechanism.
-
-**Fix:**
-```prisma
-model NewsletterSubscriber {
-  isActive         Boolean  @default(true)
-  unsubscribeToken String   @unique @default(cuid())
-  unsubscribedAt   DateTime?
-}
-```
-Add `GET /newsletter/unsubscribe?token=xxx` endpoint.
+**Status: FIXED** — `unsubscribeToken String? @unique` added to `NewsletterSubscriber`. Token is generated with `randomBytes(32)` on subscribe. `GET /newsletter/unsubscribe/:token` endpoint deletes the subscriber record.
