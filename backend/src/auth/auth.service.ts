@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as argon2 from 'argon2';
-import { randomBytes } from 'crypto';
+import { randomInt } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
-import { ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto, ResetPasswordOtpDto } from './dto';
+import { ForgotPasswordDto, LoginDto, RefreshDto, RegisterDto, ResetPasswordOtpDto } from './dto';
 
 @Injectable()
 export class AuthService {
@@ -34,13 +34,19 @@ export class AuthService {
     } catch { throw new UnauthorizedException('Invalid refresh token'); }
   }
 
+  async logout(userId: string) {
+    await this.prisma.user.update({ where: { id: userId }, data: { refreshTokenHash: null } });
+    return { message: 'Logged out' };
+  }
+
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
-    if (!user) throw new NotFoundException('No account found with that email address.');
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.prisma.user.update({ where: { id: user.id }, data: { passwordResetToken: await argon2.hash(otp), passwordResetExpires: new Date(Date.now() + 1000 * 60 * 10) } });
-    await this.queue.addEmailJob('password-reset-otp', { to: user.email, otp });
-    return { message: 'OTP sent to your email address.' };
+    if (user) {
+      const otp = randomInt(100000, 999999).toString();
+      await this.prisma.user.update({ where: { id: user.id }, data: { passwordResetToken: await argon2.hash(otp), passwordResetExpires: new Date(Date.now() + 1000 * 60 * 10) } });
+      await this.queue.addEmailJob('password-reset-otp', { to: user.email, otp });
+    }
+    return { message: 'If that email is registered, you will receive a reset code.' };
   }
 
   async resetPasswordOtp(dto: ResetPasswordOtpDto) {
@@ -53,17 +59,6 @@ export class AuthService {
     }
     await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: await argon2.hash(dto.newPassword), passwordResetToken: null, passwordResetExpires: null, refreshTokenHash: null } });
     return { message: 'Password updated successfully.' };
-  }
-
-  async resetPassword(dto: ResetPasswordDto) {
-    const candidates = await this.prisma.user.findMany({ where: { passwordResetExpires: { gt: new Date() }, passwordResetToken: { not: null } } });
-    let user = null as (typeof candidates)[number] | null;
-    for (const candidate of candidates) {
-      if (candidate.passwordResetToken && await argon2.verify(candidate.passwordResetToken, dto.token)) { user = candidate; break; }
-    }
-    if (!user) throw new BadRequestException('Invalid or expired reset token');
-    await this.prisma.user.update({ where: { id: user.id }, data: { passwordHash: await argon2.hash(dto.newPassword), passwordResetToken: null, passwordResetExpires: null, refreshTokenHash: null } });
-    return { message: 'Password updated successfully' };
   }
 
   private async issueTokens(userId: string, email: string, role: string) {

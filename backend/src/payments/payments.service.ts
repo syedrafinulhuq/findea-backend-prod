@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
+import { timingSafeEqual } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
@@ -48,7 +49,13 @@ export class PaymentsService {
 
   async handleWebhook(signature: string | undefined, payload: any) {
     const secretHash = this.config.get('FLUTTERWAVE_WEBHOOK_HASH');
-    if (secretHash && signature !== secretHash) throw new BadRequestException('Invalid webhook signature');
+    if (secretHash) {
+      const sigBuf = Buffer.from(signature ?? '');
+      const hashBuf = Buffer.from(secretHash);
+      if (sigBuf.length !== hashBuf.length || !timingSafeEqual(sigBuf, hashBuf)) {
+        throw new BadRequestException('Invalid webhook signature');
+      }
+    }
     if (payload.event === 'charge.completed' && payload.data?.id) return this.verify(String(payload.data.id));
     return { received: true };
   }

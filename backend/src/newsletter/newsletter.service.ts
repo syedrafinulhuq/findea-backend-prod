@@ -6,8 +6,11 @@ import { SubscribeDto } from './newsletter.dto';
 export class NewsletterService {
   constructor(private prisma: PrismaService, private queue: QueueService) {}
   async subscribe(dto: SubscribeDto) {
-    const subscriber = await this.prisma.newsletterSubscriber.upsert({ where: { email: dto.email }, update: {}, create: { email: dto.email } });
-    await this.queue.addEmailJob('newsletter-welcome', { to: dto.email });
+    const existing = await this.prisma.newsletterSubscriber.findUnique({ where: { email: dto.email } });
+    const subscriber = existing ?? await this.prisma.newsletterSubscriber.create({ data: { email: dto.email } });
+    if (!existing) {
+      await this.queue.addEmailJob('newsletter-welcome', { to: dto.email });
+    }
     return { message: 'Subscribed successfully', subscriber };
   }
 }
