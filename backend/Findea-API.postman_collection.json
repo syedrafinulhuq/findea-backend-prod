@@ -1,0 +1,877 @@
+{
+  "info": {
+    "name": "Findea API",
+    "description": "Complete API collection for the Findea e-commerce backend.\n\n**Base URL:** `http://209.74.71.27:4000/api`\n\n**Quick start:**\n1. Run \"Login as Customer\" — `accessToken` is saved automatically.\n2. Run \"Login as Admin\" — `adminToken` is saved automatically.\n3. All auth-protected requests use the saved tokens via collection variables.\n\n**Seed credentials:**\n- Admin: `admin@fidea.com` / `Admin@12345`\n- Customer: `sarah@example.com` / `Customer@12345`\n\n**Test coupons:** `WELCOME10`, `FLAT500`, `SUMMER15`, `DEVTEST`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",      "value": "http://209.74.71.27:4000/api", "type": "string" },
+    { "key": "accessToken",  "value": "", "type": "string" },
+    { "key": "adminToken",   "value": "", "type": "string" },
+    { "key": "refreshToken", "value": "", "type": "string" },
+    { "key": "productId",    "value": "", "type": "string" },
+    { "key": "productSlug",  "value": "linen-wrap-dress", "type": "string" },
+    { "key": "orderId",      "value": "", "type": "string" },
+    { "key": "orderNumber",  "value": "", "type": "string" },
+    { "key": "addressId",    "value": "", "type": "string" },
+    { "key": "cartItemId",   "value": "", "type": "string" },
+    { "key": "couponId",     "value": "", "type": "string" },
+    { "key": "reviewId",     "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"password\": \"Test@12345\",\n  \"firstName\": \"New\",\n  \"lastName\": \"User\",\n  \"phone\": \"+8801700000001\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('accessToken', r.accessToken);",
+                "  pm.collectionVariables.set('refreshToken', r.refreshToken);",
+                "  console.log('accessToken saved:', r.accessToken?.substring(0,20) + '...');",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Login as Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sarah@example.com\",\n  \"password\": \"Customer@12345\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('accessToken', r.accessToken);",
+                "  pm.collectionVariables.set('refreshToken', r.refreshToken);",
+                "  console.log('Customer token saved');",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Login as Admin",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@fidea.com\",\n  \"password\": \"Admin@12345\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('adminToken', r.accessToken);",
+                "  console.log('Admin token saved');",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/refresh", "host": ["{{baseUrl}}"], "path": ["auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 200) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('accessToken', r.accessToken);",
+                "  pm.collectionVariables.set('refreshToken', r.refreshToken);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/forgot-password", "host": ["{{baseUrl}}"], "path": ["auth", "forgot-password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sarah@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reset Password (OTP)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/auth/reset-password-otp", "host": ["{{baseUrl}}"], "path": ["auth", "reset-password-otp"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"sarah@example.com\",\n  \"otp\": \"123456\",\n  \"newPassword\": \"NewPass@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/auth/logout", "host": ["{{baseUrl}}"], "path": ["auth", "logout"] },
+            "body": { "mode": "raw", "raw": "{}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 Users (Profile & Addresses)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] }
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/me", "host": ["{{baseUrl}}"], "path": ["users", "me"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Rahman\",\n  \"phone\": \"+8801811111111\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/me/password", "host": ["{{baseUrl}}"], "path": ["users", "me", "password"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Customer@12345\",\n  \"newPassword\": \"NewPass@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Home\",\n  \"line1\": \"24 Gulshan Avenue\",\n  \"line2\": \"Apartment 4B\",\n  \"city\": \"Dhaka\",\n  \"state\": \"Dhaka\",\n  \"postalCode\": \"1212\",\n  \"country\": \"Bangladesh\",\n  \"isDefault\": true\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('addressId', r.id);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Update Address",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses", "{{addressId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"line2\": \"Floor 3\",\n  \"postalCode\": \"1213\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Set Address as Default",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses/{{addressId}}/default", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses", "{{addressId}}", "default"] }
+          }
+        },
+        {
+          "name": "Delete Address",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/users/me/addresses/{{addressId}}", "host": ["{{baseUrl}}"], "path": ["users", "me", "addresses", "{{addressId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛍️ Products",
+      "item": [
+        {
+          "name": "List All Products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=12",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page",    "value": "1" },
+                { "key": "limit",   "value": "12" },
+                { "key": "search",  "value": "", "disabled": true },
+                { "key": "category","value": "woman", "disabled": true },
+                { "key": "sortBy",  "value": "price_asc", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Category",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?category=woman&page=1&limit=8",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "category", "value": "woman" },
+                { "key": "page",     "value": "1" },
+                { "key": "limit",    "value": "8" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Products – Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?search=dress",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "search", "value": "dress" }]
+            }
+          }
+        },
+        {
+          "name": "List Products – Sort by Price",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?sortBy=price_asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "sortBy", "value": "price_asc" }]
+            }
+          }
+        },
+        {
+          "name": "Get Product by Slug",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/{{productSlug}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productSlug}}"] }
+          }
+        },
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/products/categories", "host": ["{{baseUrl}}"], "path": ["products", "categories"] }
+          }
+        },
+        {
+          "name": "[ADMIN] Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Batik Print Shirt\",\n  \"slug\": \"batik-print-shirt\",\n  \"description\": \"Handcrafted batik shirt with traditional patterns.\",\n  \"price\": 85.00,\n  \"stock\": 20,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1?w=800\",\n  \"categoryId\": \"\",\n  \"isActive\": true\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('productId', r.id);",
+                "  console.log('productId saved:', r.id);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "[ADMIN] Update Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 79.00,\n  \"stock\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Delete (Soft) Product",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "[ADMIN] Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products/categories", "host": ["{{baseUrl}}"], "path": ["products", "categories"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sale\",\n  \"slug\": \"sale\"\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Add Product Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/images", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "images"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1?w=800\",\n  \"position\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Remove Product Image",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/products/{{productId}}/images/IMAGE_ID_HERE", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}", "images", "IMAGE_ID_HERE"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🛒 Cart",
+      "item": [
+        {
+          "name": "Get My Cart",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          }
+        },
+        {
+          "name": "Add Item to Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/items", "host": ["{{baseUrl}}"], "path": ["cart", "items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 2\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  if (r.items && r.items.length > 0) {",
+                "    pm.collectionVariables.set('cartItemId', r.items[0].id);",
+                "  }",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartItemId}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartItemId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove Cart Item",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cart/items/{{cartItemId}}", "host": ["{{baseUrl}}"], "path": ["cart", "items", "{{cartItemId}}"] }
+          }
+        },
+        {
+          "name": "Clear Entire Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/cart", "host": ["{{baseUrl}}"], "path": ["cart"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Wishlist",
+      "item": [
+        {
+          "name": "Get My Wishlist",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist", "host": ["{{baseUrl}}"], "path": ["wishlist"] }
+          }
+        },
+        {
+          "name": "Add to Wishlist",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/{{productId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Remove from Wishlist",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/wishlist/{{productId}}", "host": ["{{baseUrl}}"], "path": ["wishlist", "{{productId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Orders",
+      "item": [
+        {
+          "name": "Place Order (Guest / Logged-in)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}", "disabled": true }
+            ],
+            "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerEmail\": \"sarah@example.com\",\n  \"customerName\": \"Sarah Rahman\",\n  \"customerPhone\": \"+8801811111111\",\n  \"shippingLine1\": \"24 Gulshan Avenue\",\n  \"shippingLine2\": \"Apt 4B\",\n  \"shippingCity\": \"Dhaka\",\n  \"shippingState\": \"Dhaka\",\n  \"shippingCountry\": \"Bangladesh\",\n  \"couponCode\": \"DEVTEST\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('orderNumber', r.orderNumber);",
+                "  pm.collectionVariables.set('orderId', r.id);",
+                "  console.log('orderNumber saved:', r.orderNumber);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Track Order (Public)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/orders/track/{{orderNumber}}?email=sarah@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders", "track", "{{orderNumber}}"],
+              "query": [{ "key": "email", "value": "sarah@example.com" }]
+            }
+          }
+        },
+        {
+          "name": "My Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/mine", "host": ["{{baseUrl}}"], "path": ["orders", "mine"] }
+          }
+        },
+        {
+          "name": "Cancel Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderNumber}}/cancel", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderNumber}}", "cancel"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Changed my mind\"\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] List All Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/orders?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["orders"],
+              "query": [
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "20" },
+                { "key": "status", "value": "PENDING", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Update Order Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderNumber}}/status", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderNumber}}", "status"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"SHIPPED\",\n  \"trackingNumber\": \"TRK-20260605-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Refund Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/orders/{{orderNumber}}/refund", "host": ["{{baseUrl}}"], "path": ["orders", "{{orderNumber}}", "refund"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "💳 Payments",
+      "item": [
+        {
+          "name": "Initialize Payment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/payments/initialize", "host": ["{{baseUrl}}"], "path": ["payments", "initialize"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{orderId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Verify Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/payments/verify", "host": ["{{baseUrl}}"], "path": ["payments", "verify"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"transactionId\": \"FLW_TX_123456789\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Flutterwave Webhook (simulate)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "verif-hash", "value": "YOUR_WEBHOOK_SECRET_HERE" }
+            ],
+            "url": { "raw": "{{baseUrl}}/payments/flutterwave/webhook", "host": ["{{baseUrl}}"], "path": ["payments", "flutterwave", "webhook"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"charge.completed\",\n  \"data\": {\n    \"id\": 123456789,\n    \"tx_ref\": \"ORDER-REF-HERE\",\n    \"status\": \"successful\",\n    \"amount\": 115.00,\n    \"currency\": \"BDT\"\n  }\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Coupons",
+      "item": [
+        {
+          "name": "Validate Coupon (Public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/coupons/validate/WELCOME10", "host": ["{{baseUrl}}"], "path": ["coupons", "validate", "WELCOME10"] }
+          }
+        },
+        {
+          "name": "Validate DEVTEST Coupon",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/coupons/validate/DEVTEST", "host": ["{{baseUrl}}"], "path": ["coupons", "validate", "DEVTEST"] }
+          }
+        },
+        {
+          "name": "[ADMIN] List All Coupons",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/coupons", "host": ["{{baseUrl}}"], "path": ["coupons"] }
+          }
+        },
+        {
+          "name": "[ADMIN] Create Coupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/coupons", "host": ["{{baseUrl}}"], "path": ["coupons"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"FLASH30\",\n  \"type\": \"PERCENTAGE\",\n  \"value\": 30,\n  \"minOrder\": 150,\n  \"maxUses\": 25,\n  \"expiresAt\": \"2026-12-31T23:59:59Z\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('couponId', r.id);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "[ADMIN] Update Coupon",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/coupons/{{couponId}}", "host": ["{{baseUrl}}"], "path": ["coupons", "{{couponId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isActive\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "[ADMIN] Delete Coupon",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/coupons/{{couponId}}", "host": ["{{baseUrl}}"], "path": ["coupons", "{{couponId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⭐ Reviews",
+      "item": [
+        {
+          "name": "Get Product Reviews (Public)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/reviews/product/{{productId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "product", "{{productId}}"] }
+          }
+        },
+        {
+          "name": "Create Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/reviews", "host": ["{{baseUrl}}"], "path": ["reviews"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"orderId\": \"{{orderId}}\",\n  \"rating\": 5,\n  \"comment\": \"Beautiful quality, exactly as pictured. Highly recommend!\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "if (pm.response.code === 201) {",
+                "  const r = pm.response.json();",
+                "  pm.collectionVariables.set('reviewId', r.id);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Update My Review",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Great product, fast delivery.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete My Review",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "{{reviewId}}"] }
+          }
+        },
+        {
+          "name": "[ADMIN] Delete Any Review",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/reviews/admin/{{reviewId}}", "host": ["{{baseUrl}}"], "path": ["reviews", "admin", "{{reviewId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📧 Newsletter",
+      "item": [
+        {
+          "name": "Subscribe",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/newsletter/subscribe", "host": ["{{baseUrl}}"], "path": ["newsletter", "subscribe"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"subscriber@example.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unsubscribe (via token link)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/newsletter/unsubscribe/UNSUBSCRIBE_TOKEN_HERE", "host": ["{{baseUrl}}"], "path": ["newsletter", "unsubscribe", "UNSUBSCRIBE_TOKEN_HERE"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Admin",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": { "raw": "{{baseUrl}}/admin/stats", "host": ["{{baseUrl}}"], "path": ["admin", "stats"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    }
+  ]
+}
