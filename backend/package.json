@@ -34,7 +34,8 @@
     "@nestjs/swagger": "^8.1.0",
     "@nestjs/terminus": "^11.1.1",
     "@nestjs/throttler": "^6.5.0",
-    "@prisma/client": "^5.22.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "argon2": "^0.41.1",
     "axios": "^1.7.9",
     "bullmq": "^5.34.5",
@@ -48,6 +49,7 @@
     "nodemailer": "^6.9.16",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.21.0",
     "pino-http": "^10.3.0",
     "pino-pretty": "^13.0.0",
     "reflect-metadata": "^0.2.2",
@@ -62,7 +64,8 @@
     "@types/node": "^22.19.17",
     "@types/nodemailer": "^6.4.17",
     "@types/passport-jwt": "^4.0.1",
-    "prisma": "^5.22.0",
+    "@types/pg": "^8.20.0",
+    "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
