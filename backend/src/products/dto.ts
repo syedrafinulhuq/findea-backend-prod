@@ -1,36 +1,77 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUrl, Min, Max } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform, Type } from 'class-transformer';
+import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
+import { ProductType } from '@prisma/client';
 
 export class ProductQueryDto {
-  @ApiProperty({ required: false }) @IsOptional() @IsString() search?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() category?: string;
-  @ApiProperty({ required: false, enum: ['price_asc', 'price_desc', 'newest', 'popular'] })
-  @IsOptional() @IsIn(['price_asc', 'price_desc', 'newest', 'popular']) sortBy?: string;
-  @ApiProperty({ required: false, default: 1 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
-  @ApiProperty({ required: false, default: 20 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 20;
+  @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() category?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() brand?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() location?: string;
+
+  @ApiPropertyOptional({ enum: ProductType, description: 'Filter by entity type' })
+  @IsOptional()
+  @IsEnum(ProductType)
+  type?: ProductType;
+
+  @ApiPropertyOptional({ description: 'Inclusive minimum price' })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) minPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Inclusive maximum price' })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(0) maxPrice?: number;
+
+  @ApiPropertyOptional({ description: 'Minimum average review rating (1–5)' })
+  @IsOptional() @Type(() => Number) @IsNumber() @Min(1) @Max(5) minRating?: number;
+
+  @ApiPropertyOptional({ description: 'When true, only products with stock > 0' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  inStock?: boolean;
+
+  @ApiPropertyOptional({ description: 'When true, only booked/reserved items' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  booked?: boolean;
+
+  @ApiPropertyOptional({ enum: ['price_asc', 'price_desc', 'newest', 'popular', 'rating_desc'] })
+  @IsOptional()
+  @IsEnum(['price_asc', 'price_desc', 'newest', 'popular', 'rating_desc'])
+  sortBy?: 'price_asc' | 'price_desc' | 'newest' | 'popular' | 'rating_desc';
+
+  @ApiPropertyOptional({ default: 1 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
+  @ApiPropertyOptional({ default: 20 }) @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 20;
 }
 
 export class CreateProductDto {
   @ApiProperty() @IsString() name: string;
   @ApiProperty() @IsString() slug: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() brand?: string;
+  @ApiPropertyOptional({ enum: ProductType }) @IsOptional() @IsEnum(ProductType) type?: ProductType;
+  @ApiPropertyOptional() @IsOptional() @IsString() location?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isBooked?: boolean;
   @ApiProperty() @Type(() => Number) @IsNumber() @Min(0) price: number;
   @ApiProperty() @Type(() => Number) @IsNumber() @Min(0) stock: number;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() imageUrl?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() categoryId?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() isActive?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() imageUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() categoryId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 export class UpdateProductDto {
-  @ApiProperty({ required: false }) @IsOptional() @IsString() name?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() slug?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() description?: string;
-  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsNumber() @Min(0) price?: number;
-  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsNumber() @Min(0) stock?: number;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() imageUrl?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsString() categoryId?: string;
-  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() isActive?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() name?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() slug?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() brand?: string;
+  @ApiPropertyOptional({ enum: ProductType }) @IsOptional() @IsEnum(ProductType) type?: ProductType;
+  @ApiPropertyOptional() @IsOptional() @IsString() location?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isBooked?: boolean;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() @Min(0) price?: number;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsNumber() @Min(0) stock?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() imageUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() categoryId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
 export class CreateCategoryDto {
@@ -40,5 +81,5 @@ export class CreateCategoryDto {
 
 export class AddProductImageDto {
   @ApiProperty() @IsUrl() url: string;
-  @ApiProperty({ required: false }) @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
+  @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(0) position?: number;
 }

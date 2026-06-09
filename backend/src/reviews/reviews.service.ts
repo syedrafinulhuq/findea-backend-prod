@@ -18,24 +18,33 @@ export class ReviewsService {
     const existing = await this.prisma.review.findUnique({ where: { userId_productId: { userId, productId: dto.productId } } });
     if (existing) throw new BadRequestException('You have already reviewed this product');
 
-    return this.prisma.review.create({
+    const review = await this.prisma.review.create({
       data: { userId, productId: dto.productId, orderId: dto.orderId, rating: dto.rating, comment: dto.comment },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
+
+    await this.recalculateProductRating(dto.productId);
+    return review;
   }
 
   async update(userId: string, reviewId: string, dto: UpdateReviewDto) {
     const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('Review not found');
     if (review.userId !== userId) throw new ForbiddenException('Not your review');
-    return this.prisma.review.update({ where: { id: reviewId }, data: dto });
+
+    const updated = await this.prisma.review.update({ where: { id: reviewId }, data: dto });
+    await this.recalculateProductRating(review.productId);
+    return updated;
   }
 
   async remove(userId: string, reviewId: string, isAdmin = false) {
     const review = await this.prisma.review.findUnique({ where: { id: reviewId } });
     if (!review) throw new NotFoundException('Review not found');
     if (!isAdmin && review.userId !== userId) throw new ForbiddenException('Not your review');
-    return this.prisma.review.delete({ where: { id: reviewId } });
+
+    const deleted = await this.prisma.review.delete({ where: { id: reviewId } });
+    await this.recalculateProductRating(review.productId);
+    return deleted;
   }
 
   forProduct(productId: string) {
@@ -43,6 +52,21 @@ export class ReviewsService {
       where: { productId },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  private async recalculateProductRating(productId: string): Promise<void> {
+    const agg = await this.prisma.review.aggregate({
+      where: { productId },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+    await this.prisma.product.update({
+      where: { id: productId },
+      data: {
+        avgRating: agg._avg.rating ?? 0,
+        reviewCount: agg._count.id,
+      },
     });
   }
 }

@@ -34,6 +34,13 @@ enum CouponType {
   FIXED
 }
 
+enum ProductType {
+  PRODUCT
+  SERVICE
+  BOUTIQUE
+  REGISTRY
+}
+
 model User {
   id                   String         @id @default(cuid())
   email                String         @unique
@@ -79,18 +86,24 @@ model Category {
 }
 
 model Product {
-  id           String         @id @default(cuid())
-  name         String
-  slug         String         @unique
-  description  String?
-  price        Decimal        @db.Decimal(10, 2)
-  stock        Int            @default(0)
-  imageUrl     String?
-  categoryId   String?
-  isActive     Boolean        @default(true)
-  lowStockAlert Boolean       @default(false)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  id            String         @id @default(cuid())
+  name          String
+  slug          String         @unique
+  description   String?
+  price         Decimal        @db.Decimal(10, 2)
+  stock         Int            @default(0)
+  imageUrl      String?
+  categoryId    String?
+  brand         String?
+  type          ProductType    @default(PRODUCT)
+  location      String?
+  isBooked      Boolean        @default(false)
+  isActive      Boolean        @default(true)
+  lowStockAlert Boolean        @default(false)
+  avgRating     Float          @default(0)
+  reviewCount   Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   category     Category?      @relation(fields: [categoryId], references: [id])
   orderItems   OrderItem[]
   cartItems    CartItem[]

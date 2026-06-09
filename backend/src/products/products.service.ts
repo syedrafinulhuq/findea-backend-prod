@@ -20,16 +20,29 @@ export class ProductsService {
 
     const where: Prisma.ProductWhereInput = {
       isActive: true,
-      name: q.search ? { contains: q.search, mode: 'insensitive' } : undefined,
-      category: q.category ? { slug: q.category } : undefined,
+      ...(q.search && { name: { contains: q.search, mode: 'insensitive' } }),
+      ...(q.category && { category: { slug: q.category } }),
+      ...(q.brand && { brand: { contains: q.brand, mode: 'insensitive' } }),
+      ...(q.inStock && { stock: { gt: 0 } }),
+      ...((q.minPrice !== undefined || q.maxPrice !== undefined) && {
+        price: {
+          ...(q.minPrice !== undefined && { gte: new Prisma.Decimal(q.minPrice) }),
+          ...(q.maxPrice !== undefined && { lte: new Prisma.Decimal(q.maxPrice) }),
+        },
+      }),
+      ...(q.minRating !== undefined && { avgRating: { gte: q.minRating } }),
+      ...(q.type && { type: q.type }),
+      ...(q.location && { location: { contains: q.location, mode: 'insensitive' as const } }),
+      ...(q.booked !== undefined && { isBooked: q.booked }),
     };
 
     let orderBy: Prisma.ProductOrderByWithRelationInput;
     switch (q.sortBy) {
-      case 'price_asc':  orderBy = { price: 'asc' }; break;
-      case 'price_desc': orderBy = { price: 'desc' }; break;
-      case 'popular':    orderBy = { orderItems: { _count: 'desc' } }; break;
-      default:           orderBy = { createdAt: 'desc' };
+      case 'price_asc':   orderBy = { price: 'asc' }; break;
+      case 'price_desc':  orderBy = { price: 'desc' }; break;
+      case 'popular':     orderBy = { orderItems: { _count: 'desc' } }; break;
+      case 'rating_desc': orderBy = { avgRating: 'desc' }; break;
+      default:            orderBy = { createdAt: 'desc' };
     }
 
     const [data, total] = await Promise.all([
@@ -41,7 +54,14 @@ export class ProductsService {
   }
 
   async detail(slug: string) {
-    const product = await this.prisma.product.findUnique({ where: { slug }, include: { category: true, images: { orderBy: { position: 'asc' } }, reviews: { include: { user: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } } } });
+    const product = await this.prisma.product.findUnique({
+      where: { slug },
+      include: {
+        category: true,
+        images: { orderBy: { position: 'asc' } },
+        reviews: { include: { user: { select: { id: true, firstName: true, lastName: true } } }, orderBy: { createdAt: 'desc' } },
+      },
+    });
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
