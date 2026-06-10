@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Findea API",
+    "name": "Findea API v2",
     "description": "Complete API collection for the Findea e-commerce backend.\n\n**Base URL:** `http://209.74.71.27:4000/api`\n\n**Quick start:**\n1. Run \"Login as Customer\" — `accessToken` is saved automatically.\n2. Run \"Login as Admin\" — `adminToken` is saved automatically.\n3. All auth-protected requests use the saved tokens via collection variables.\n\n**Seed credentials:**\n- Admin: `admin@fidea.com` / `Admin@12345`\n- Customer: `sarah@example.com` / `Customer@12345`\n\n**Test coupons:** `WELCOME10`, `FLAT500`, `SUMMER15`, `DEVTEST`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },

@@ -1,6 +1,6 @@
 {
   "info": {
-    "name": "Findea API",
+    "name": "Findea API v1",
     "description": "Complete Postman collection for the Findea backend API.\n\n**Base URL:** `http://localhost:4000/api`\n\n**Auth:** Set `accessToken` and `refreshToken` variables after login/register. Protected endpoints automatically use the Bearer token.\n\n**Roles:** `CUSTOMER` (default) · `ADMIN` (product creation, all orders)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
