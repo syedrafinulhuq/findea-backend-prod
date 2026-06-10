@@ -16,18 +16,18 @@ echo "==> Running database migrations..."
 $COMPOSE exec -T app npx prisma migrate deploy
 
 echo "==> Checking if database needs seeding..."
-USER_COUNT=$($COMPOSE exec -T app node -e "
+ADMIN_COUNT=$($COMPOSE exec -T app node -e "
 const { PrismaClient } = require('@prisma/client');
 const { PrismaPg } = require('@prisma/adapter-pg');
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
-prisma.user.count().then(c => { console.log(c); return prisma.\$disconnect(); });
+prisma.user.count({ where: { role: 'ADMIN' } }).then(c => { console.log(c); return prisma.\$disconnect(); });
 " | tr -d '\r')
 
-if [ "$USER_COUNT" = "0" ]; then
-  echo "==> Database is empty, seeding..."
+if [ "$ADMIN_COUNT" = "0" ]; then
+  echo "==> No admin user found, seeding (idempotent — safe with existing data)..."
   $COMPOSE exec -T app node dist/prisma/seed.js
 else
-  echo "==> Database already has $USER_COUNT user(s), skipping seed."
+  echo "==> Admin user already exists ($ADMIN_COUNT), skipping seed."
 fi
 
 echo "==> Done! App is live."
