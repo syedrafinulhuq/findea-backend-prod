@@ -37,7 +37,7 @@ Passwords are hashed with **Argon2** (not bcrypt).
 ### Registration
 
 ```
-POST /api/v1/auth/register
+POST /api/auth/register
 Body: { email, password, firstName, lastName, phone? }
 
 → Hash password with Argon2
@@ -49,7 +49,7 @@ Body: { email, password, firstName, lastName, phone? }
 ### Login
 
 ```
-POST /api/v1/auth/login
+POST /api/auth/login
 Body: { email, password }
 
 → Find user by email
@@ -62,7 +62,7 @@ Body: { email, password }
 ### Token Refresh
 
 ```
-POST /api/v1/auth/refresh
+POST /api/auth/refresh
 Body: { refreshToken }
 
 → Decode token to extract userId
@@ -75,7 +75,7 @@ Body: { refreshToken }
 ### Logout
 
 ```
-POST /api/v1/auth/logout
+POST /api/auth/logout
 Authorization: Bearer <accessToken>
 
 → Clear User.refreshTokenHash
@@ -85,14 +85,14 @@ Authorization: Bearer <accessToken>
 ### Password Reset (OTP Flow)
 
 ```
-Step 1: POST /api/v1/auth/forgot-password
+Step 1: POST /api/auth/forgot-password
 Body: { email }
 → Generate 6-digit OTP using crypto.randomInt (CSPRNG)
 → Store hashed OTP + 10-min expiry in User
 → Queue password-reset-otp email
 → Return 200 (always, to prevent user enumeration)
 
-Step 2: POST /api/v1/auth/reset-password-otp
+Step 2: POST /api/auth/reset-password-otp
 Body: { email, otp, newPassword }
 → Find user, verify OTP hash and expiry
 → Hash new password with Argon2

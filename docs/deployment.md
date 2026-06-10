@@ -158,7 +158,7 @@ vercel --prod
 
 Set the following environment variable in the Vercel dashboard:
 ```
-NEXT_PUBLIC_API_URL=https://api.findea.com/api/v1
+NEXT_PUBLIC_API_URL=https://api.findea.com/api
 ```
 
 ---

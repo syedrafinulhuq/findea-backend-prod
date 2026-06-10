@@ -17,7 +17,7 @@ Handles payment processing via Flutterwave V3.
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| POST | `/payments/initialize` | Customer | Start checkout for an order |
+| POST | `/payments/initialize` | Public | Start checkout for an order (works for guest orders) |
 | POST | `/payments/verify` | Customer | Manually verify a transaction |
 | POST | `/payments/flutterwave/webhook` | Public | Flutterwave webhook receiver |
 
@@ -61,10 +61,10 @@ On valid `charge.completed` event with `status: successful`:
 
 ## DTOs
 
-### InitializePaymentDto
+### InitPaymentDto
 ```typescript
 {
-  orderNumber: string;
+  orderId: string;   // Order.id (UUID), not orderNumber
 }
 ```
 
@@ -105,5 +105,5 @@ FLUTTERWAVE_WEBHOOK_HASH=your-webhook-hash
 
 Configure the webhook URL in the Flutterwave dashboard:
 ```
-https://api.findea.com/api/v1/payments/flutterwave/webhook
+https://api.findea.com/api/payments/flutterwave/webhook
 ```

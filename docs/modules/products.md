@@ -40,7 +40,7 @@ Manages the product catalog, categories, and product gallery images.
 | `maxPrice` | number | Maximum price (inclusive) |
 | `minRating` | number | Minimum `avgRating` (0–5) |
 | `inStock` | boolean | `true` = only products with `stock > 0` |
-| `isBooked` | boolean | Filter by `isBooked` flag |
+| `booked` | boolean | Filter by `Product.isBooked` flag |
 | `sortBy` | string | See sort options below |
 | `page` | number | Page number (default: 1) |
 | `limit` | number | Items per page (default: 20) |

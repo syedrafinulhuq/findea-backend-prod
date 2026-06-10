@@ -1,6 +1,6 @@
 # API Reference
 
-**Base URL:** `/api/v1`  
+**Base URL:** `/api`  
 **Auth:** `Authorization: Bearer <accessToken>` for protected routes  
 **Swagger UI:** `http://localhost:4000/docs`
 
@@ -191,9 +191,9 @@ List products with filters, sorting, and pagination.
 | `location` | string | Location filter |
 | `minPrice` | number | Minimum price |
 | `maxPrice` | number | Maximum price |
-| `minRating` | number | Minimum average rating (0–5) |
+| `minRating` | number | Minimum average rating (1–5) |
 | `inStock` | boolean | Only products with stock > 0 |
-| `isBooked` | boolean | Filter by booking status |
+| `booked` | boolean | Filter by booking status |
 | `sortBy` | `price_asc\|price_desc\|newest\|popular\|rating_desc` | Sort order |
 | `page` | number | Page number (default 1) |
 | `limit` | number | Items per page (default 20) |
@@ -393,9 +393,9 @@ Remove product from wishlist.
 
 ### POST /orders
 
-**Auth required.**
+**Public** — works for guests as well as logged-in users. If a valid `Authorization: Bearer` header is present, the order is linked to that user (`userId`); otherwise it's a guest order.
 
-Create a new order.
+A flat **delivery fee of ৳80** is applied automatically by the server — it is not part of the request body.
 
 **Body:**
 ```json
@@ -407,36 +407,50 @@ Create a new order.
   "customerName": "John Doe",
   "customerPhone": "+8801700000000",
   "shippingLine1": "123 Main St",
+  "shippingLine2": "Apt 4B",
   "shippingCity": "Dhaka",
   "shippingState": "Dhaka Division",
   "shippingCountry": "Bangladesh",
-  "couponCode": "WELCOME10",
-  "deliveryFee": 60
+  "couponCode": "WELCOME10"
 }
 ```
 
-**Response `201`:**
+`customerPhone`, `shippingLine2`, `shippingState`, `shippingCountry` (defaults to `Bangladesh`), and `couponCode` are optional.
+
+**Response `201`:** the created order, including its items.
 ```json
 {
-  "orderNumber": "ORD-20240615-A3X9",
+  "id": "...",
+  "orderNumber": "FID-1718000000000-A3F9C1",
+  "userId": null,
+  "customerEmail": "user@example.com",
+  "subtotal": "3970.00",
+  "deliveryFee": "80.00",
+  "discountAmount": "0.00",
   "total": "4050.00",
-  "status": "PENDING"
+  "status": "PENDING",
+  "items": [
+    { "id": "...", "productId": "...", "productName": "...", "quantity": 2, "unitPrice": "1985.00" }
+  ],
+  "createdAt": "..."
 }
 ```
+
+`orderNumber` format is `FID-<timestamp>-<6-char hex>`.
+
+To proceed to payment, pass the returned `id` as `orderId` to `POST /payments/initialize` (see [Payments](#payments)).
 
 ---
 
 ### GET /orders/mine
 
-**Auth required.** Returns the current user's orders, paginated.
-
-**Query:** `page`, `limit`
+**Auth required.** Returns all of the current user's orders (with items and payment), newest first. Not paginated.
 
 ---
 
 ### GET /orders/track/:orderNumber
 
-Track order by order number. Requires `?email=customer@email.com`.
+**Public.** Track order by order number. Requires `?email=customer@email.com` — the email must match `Order.customerEmail`.
 
 ---
 
@@ -449,30 +463,45 @@ Track order by order number. Requires `?email=customer@email.com`.
 { "status": "SHIPPED", "trackingNumber": "BD123456789" }
 ```
 
+`trackingNumber` is optional. Status transitions are validated — e.g. `PAID → PROCESSING/CANCELLED`, `PROCESSING → SHIPPED/CANCELLED`, `SHIPPED → DELIVERED`. Invalid transitions return `400`.
+
 ---
 
 ### POST /orders/:orderNumber/cancel
 
-**Auth required.** Cancel a PENDING order.
+**Auth required.** Cancel an order that is still `PENDING`, `PAID`, or `PROCESSING`. A user can only cancel their own orders.
 
 **Body:**
 ```json
 { "reason": "Changed my mind" }
 ```
 
+`reason` is required.
+
 ---
 
 ### POST /orders/:orderNumber/refund
 
-**Admin only.** Mark order as refunded.
+**Admin only.** Marks an order as `REFUNDED`. Only allowed when the order is currently `PAID`, `PROCESSING`, or `DELIVERED`.
 
 ---
 
 ### GET /orders
 
-**Admin only.** List all orders with filters.
+**Admin only.** List all orders, paginated.
 
-**Query:** `page`, `limit`, `status`, `search`
+**Query:** `page` (default 1), `limit` (default 20, max 100), `status` (optional `OrderStatus` filter)
+
+**Response `200`:**
+```json
+{
+  "data": [ { "id": "...", "orderNumber": "...", "status": "...", "total": "...", "items": [...] } ],
+  "total": 48,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 3
+}
+```
 
 ---
 
@@ -480,12 +509,14 @@ Track order by order number. Requires `?email=customer@email.com`.
 
 ### POST /payments/initialize
 
-**Auth required.** Initiate payment for an order.
+Initiate payment for an order. (No auth required — works for guest orders too.)
 
 **Body:**
 ```json
-{ "orderNumber": "ORD-20240615-A3X9" }
+{ "orderId": "..." }
 ```
+
+`orderId` is the order's internal UUID (`Order.id`), returned in the `POST /orders` response — not the human-readable `orderNumber`.
 
 **Response `200`:**
 ```json

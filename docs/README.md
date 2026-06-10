@@ -31,4 +31,4 @@ Findea is a full-stack e-commerce platform for fashion products. The backend is 
 
 - **Swagger UI** (when running locally): `http://localhost:4000/docs`
 - **Health check**: `GET /health`
-- **API base path**: `/api/v1`
+- **API base path**: `/api`

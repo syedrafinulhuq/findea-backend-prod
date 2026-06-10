@@ -13,7 +13,7 @@
 │   Pages: product listing, product detail, cart, checkout,    │
 │          orders, auth, profile, admin                        │
 └───────────────────────────┬──────────────────────────────────┘
-                            │ REST/JSON  (base: /api/v1)
+                            │ REST/JSON  (base: /api)
                             ▼
 ┌──────────────────────────────────────────────────────────────┐
 │             Backend — NestJS 10 (Docker / VPS)               │
@@ -124,19 +124,24 @@ AppModule
 ## Data Flow: Order Creation
 
 ```
-POST /orders
-  → Validate JWT + CUSTOMER role
+POST /orders   (public — works for guests and logged-in users)
   → Validate DTO (items, shipping, coupon code)
   → Prisma.$transaction([
-      1. Check product existence and stock for each item
-      2. Validate and consume coupon (increment usedCount)
-      3. Decrement product.stock for each item
-      4. Create Order record
+      1. Check product existence (isActive) for each item
+      2. Atomically decrement product.stock for each item (fails if insufficient)
+      3. Validate coupon (active, not expired, under maxUses, minOrder met)
+         and increment coupon.usedCount
+      4. Create Order record (subtotal, deliveryFee, discountAmount, total)
       5. Create OrderItem records (snapshot productName + unitPrice)
-      6. Create Payment record (PENDING)
     ])
   → Queue email job: order-created
-  → Return { orderNumber, checkoutUrl? }
+  → Return the created Order (incl. id, orderNumber, items, total, status)
+
+Then, separately:
+POST /payments/initialize { orderId }
+  → Calls Flutterwave to create a checkout session
+  → Upserts the Payment record (PENDING) with checkoutUrl
+  → Return checkoutUrl
 ```
 
 ## Data Flow: Payment Webhook

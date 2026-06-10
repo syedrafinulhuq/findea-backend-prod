@@ -270,11 +270,19 @@
               "host": ["{{baseUrl}}"],
               "path": ["products"],
               "query": [
-                { "key": "page",    "value": "1" },
-                { "key": "limit",   "value": "12" },
-                { "key": "search",  "value": "", "disabled": true },
-                { "key": "category","value": "woman", "disabled": true },
-                { "key": "sortBy",  "value": "price_asc", "disabled": true }
+                { "key": "page",      "value": "1" },
+                { "key": "limit",     "value": "12" },
+                { "key": "search",    "value": "", "disabled": true },
+                { "key": "category",  "value": "woman", "disabled": true },
+                { "key": "brand",     "value": "Findea Originals", "disabled": true },
+                { "key": "type",      "value": "PRODUCT", "disabled": true, "description": "PRODUCT | SERVICE | BOUTIQUE | REGISTRY" },
+                { "key": "location",  "value": "Dhaka", "disabled": true },
+                { "key": "minPrice",  "value": "50", "disabled": true },
+                { "key": "maxPrice",  "value": "500", "disabled": true },
+                { "key": "minRating", "value": "4", "disabled": true, "description": "1-5" },
+                { "key": "inStock",   "value": "true", "disabled": true },
+                { "key": "booked",    "value": "false", "disabled": true },
+                { "key": "sortBy",    "value": "price_asc", "disabled": true, "description": "price_asc | price_desc | newest | popular | rating_desc" }
               ]
             }
           }
@@ -320,6 +328,85 @@
           }
         },
         {
+          "name": "List Products – Sort by Top Rated",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?sortBy=rating_desc",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "sortBy", "value": "rating_desc" }]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Brand",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?brand=Findea Originals",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "brand", "value": "Findea Originals" }]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Price Range",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?minPrice=50&maxPrice=500",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "minPrice", "value": "50" },
+                { "key": "maxPrice", "value": "500" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Minimum Rating",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?minRating=4",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "minRating", "value": "4", "description": "1-5" }]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by In Stock",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?inStock=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [{ "key": "inStock", "value": "true" }]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Type & Location",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?type=PRODUCT&location=Dhaka&booked=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "type",     "value": "PRODUCT", "description": "PRODUCT | SERVICE | BOUTIQUE | REGISTRY" },
+                { "key": "location", "value": "Dhaka" },
+                { "key": "booked",   "value": "false" }
+              ]
+            }
+          }
+        },
+        {
           "name": "Get Product by Slug",
           "request": {
             "method": "GET",
@@ -344,7 +431,7 @@
             "url": { "raw": "{{baseUrl}}/products", "host": ["{{baseUrl}}"], "path": ["products"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Batik Print Shirt\",\n  \"slug\": \"batik-print-shirt\",\n  \"description\": \"Handcrafted batik shirt with traditional patterns.\",\n  \"price\": 85.00,\n  \"stock\": 20,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1?w=800\",\n  \"categoryId\": \"\",\n  \"isActive\": true\n}"
+              "raw": "{\n  \"name\": \"Batik Print Shirt\",\n  \"slug\": \"batik-print-shirt\",\n  \"description\": \"Handcrafted batik shirt with traditional patterns.\",\n  \"price\": 85.00,\n  \"stock\": 20,\n  \"imageUrl\": \"https://images.unsplash.com/photo-1602810316498-ab67cf68c8e1?w=800\",\n  \"categoryId\": \"\",\n  \"brand\": \"Findea Originals\",\n  \"type\": \"PRODUCT\",\n  \"location\": \"Dhaka\",\n  \"isBooked\": false,\n  \"isActive\": true\n}"
             }
           },
           "event": [{
@@ -371,7 +458,7 @@
             "url": { "raw": "{{baseUrl}}/products/{{productId}}", "host": ["{{baseUrl}}"], "path": ["products", "{{productId}}"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"price\": 79.00,\n  \"stock\": 25\n}"
+              "raw": "{\n  \"price\": 79.00,\n  \"stock\": 25,\n  \"brand\": \"Findea Originals\",\n  \"isBooked\": false\n}"
             }
           }
         },

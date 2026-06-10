@@ -25,8 +25,8 @@ Configuration is validated at startup via Joi — the app will refuse to start i
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `JWT_ACCESS_SECRET` | **Yes** | — | Secret for signing access tokens. Use 32+ random characters. |
-| `JWT_REFRESH_SECRET` | **Yes** | — | Secret for signing refresh tokens. Must differ from access secret. |
+| `JWT_ACCESS_SECRET` | **Yes** | — | Secret for signing access tokens. Minimum 16 characters (32+ recommended). |
+| `JWT_REFRESH_SECRET` | **Yes** | — | Secret for signing refresh tokens. Minimum 16 characters, must differ from access secret. |
 | `JWT_ACCESS_EXPIRES_IN` | No | `15m` | Access token lifetime (e.g. `15m`, `1h`) |
 | `JWT_REFRESH_EXPIRES_IN` | No | `7d` | Refresh token lifetime (e.g. `7d`, `30d`) |
 
@@ -44,9 +44,15 @@ Configuration is validated at startup via Joi — the app will refuse to start i
 |---|---|---|
 | `SMTP_HOST` | **Yes** | SMTP server host (e.g. `smtp.sendgrid.net`) |
 | `SMTP_PORT` | No | SMTP port (default `587`) |
-| `SMTP_USER` | **Yes** | SMTP username |
-| `SMTP_PASS` | **Yes** | SMTP password |
-| `MAIL_FROM` | No | From address (default `"Fidea <no-reply@fidea.com>"`) |
+| `SMTP_USER` | No | SMTP username (may be empty for unauthenticated relays) |
+| `SMTP_PASS` | No | SMTP password (may be empty for unauthenticated relays) |
+| `MAIL_FROM` | **Yes** | From address (e.g. `"Fidea <no-reply@fidea.com>"`) |
+
+### Frontend
+
+| Variable | Required | Description |
+|---|---|---|
+| `FRONTEND_URL` | **Yes** | Base URL of the frontend (e.g. `http://localhost:3000` or `https://findea.vercel.app`). Used to build the Flutterwave payment `redirect_url` (`${FRONTEND_URL}/payment/callback`). |
 
 ### CORS
 
@@ -93,6 +99,8 @@ SMTP_PORT=587
 SMTP_USER=your@email.com
 SMTP_PASS=yourpassword
 MAIL_FROM="Fidea <no-reply@fidea.com>"
+
+FRONTEND_URL=http://localhost:3000
 
 CORS_ORIGINS=http://localhost:3000
 
