@@ -57,11 +57,16 @@ Transitions are validated in `updateStatus()` — invalid transitions return `40
   shippingCity: string;
   shippingState?: string;
   shippingCountry?: string;    // default: Bangladesh
+  deliveryMethod?: DeliveryMethod;   // DELIVERY | PICKUP, default: DELIVERY
+  deliveryNotes?: string;            // landmark / delivery instructions
+  paymentMethod?: PaymentMethod;     // WAVE | ORANGE | MTN | PICKUP
   couponCode?: string;
 }
 ```
 
 > Note: there is no `deliveryFee` field — the server applies a flat ৳80 delivery fee to every order.
+
+> `paymentMethod` is currently stored as metadata only (the customer's stated preference) — it is not wired to the Flutterwave payment provider, which is selected separately at `POST /payments/initialize`.
 
 ### CancelOrderDto
 ```typescript

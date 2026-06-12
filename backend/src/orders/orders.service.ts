@@ -55,6 +55,7 @@ export class OrdersService {
           customerEmail: dto.customerEmail, customerName: dto.customerName, customerPhone: dto.customerPhone,
           shippingLine1: dto.shippingLine1, shippingLine2: dto.shippingLine2, shippingCity: dto.shippingCity,
           shippingState: dto.shippingState, shippingCountry: dto.shippingCountry || 'Bangladesh',
+          deliveryMethod: dto.deliveryMethod, deliveryNotes: dto.deliveryNotes, paymentMethod: dto.paymentMethod,
           subtotal, deliveryFee, discountAmount, total,
           items: { create: items },
         }, include: { items: { include: { product: true } } },

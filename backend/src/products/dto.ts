@@ -1,13 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsNumber, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator';
 import { ProductType } from '@prisma/client';
+
+/** Accepts a single value, comma-separated values, or repeated query params and normalizes to a string array. */
+const toArray = ({ value }: { value: unknown }) => {
+  if (value === undefined) return value;
+  const values = Array.isArray(value) ? value : [value];
+  return values.flatMap((v) => String(v).split(',')).map((v) => v.trim()).filter(Boolean);
+};
 
 export class ProductQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() category?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Category slug(s). Repeat the param or comma-separate for multiple, e.g. ?category=woman,man' })
+  @IsOptional() @Transform(toArray) @IsArray() @IsString({ each: true }) category?: string[];
+
   @ApiPropertyOptional() @IsOptional() @IsString() brand?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() location?: string;
+
+  @ApiPropertyOptional({ type: [String], description: 'Location(s). Repeat the param or comma-separate for multiple, e.g. ?location=London,Paris' })
+  @IsOptional() @Transform(toArray) @IsArray() @IsString({ each: true }) location?: string[];
 
   @ApiPropertyOptional({ enum: ProductType, description: 'Filter by entity type' })
   @IsOptional()

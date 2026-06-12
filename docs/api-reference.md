@@ -185,10 +185,10 @@ List products with filters, sorting, and pagination.
 | Param | Type | Description |
 |---|---|---|
 | `search` | string | Full-text search in name/description |
-| `category` | string | Category slug |
+| `category` | string[] | Category slug(s) — repeat the param or comma-separate, e.g. `?category=woman,man` |
 | `brand` | string | Brand name (case-insensitive) |
 | `type` | `PRODUCT\|SERVICE\|BOUTIQUE\|REGISTRY` | Product type |
-| `location` | string | Location filter |
+| `location` | string[] | Location(s), case-insensitive — repeat the param or comma-separate, e.g. `?location=London,Paris` |
 | `minPrice` | number | Minimum price |
 | `maxPrice` | number | Maximum price |
 | `minRating` | number | Minimum average rating (1–5) |
@@ -206,6 +206,40 @@ List products with filters, sorting, and pagination.
   "page": 1,
   "limit": 20,
   "totalPages": 2
+}
+```
+
+---
+
+### GET /products/filters
+
+Facet counts for the search/filter sidebar (Type, Category, Price, Availability, Rating, Location sections). Accepts the same filter query params as `GET /products` (`search`, `category`, `brand`, `type`, `location`, `minPrice`, `maxPrice`, `minRating`, `inStock`, `booked`) — `sortBy`/`page`/`limit` are ignored. Each facet's counts apply every *other* active filter, but not its own.
+
+**Response `200`:**
+```json
+{
+  "total": 186,
+  "type": [
+    { "value": "ALL", "label": "All", "count": 363 },
+    { "value": "PRODUCT", "label": "Products", "count": 186 },
+    { "value": "SERVICE", "label": "Services", "count": 31 },
+    { "value": "BOUTIQUE", "label": "Boutiques", "count": 136 },
+    { "value": "REGISTRY", "label": "Registries", "count": 10 }
+  ],
+  "category": [
+    { "slug": "woman", "name": "Woman", "count": 9 }
+  ],
+  "price": { "min": "45.00", "max": "2450.00" },
+  "availability": { "inStock": 300, "booked": 12 },
+  "rating": [
+    { "minRating": 4, "count": 39 },
+    { "minRating": 3, "count": 39 },
+    { "minRating": 2, "count": 39 },
+    { "minRating": 1, "count": 39 }
+  ],
+  "location": [
+    { "value": "Dhaka", "count": 5 }
+  ]
 }
 ```
 
@@ -411,11 +445,16 @@ A flat **delivery fee of ৳80** is applied automatically by the server — it i
   "shippingCity": "Dhaka",
   "shippingState": "Dhaka Division",
   "shippingCountry": "Bangladesh",
+  "deliveryMethod": "DELIVERY",
+  "deliveryNotes": "Leave with the security guard if not home.",
+  "paymentMethod": "WAVE",
   "couponCode": "WELCOME10"
 }
 ```
 
-`customerPhone`, `shippingLine2`, `shippingState`, `shippingCountry` (defaults to `Bangladesh`), and `couponCode` are optional.
+`customerPhone`, `shippingLine2`, `shippingState`, `shippingCountry` (defaults to `Bangladesh`), `deliveryMethod` (`DELIVERY` | `PICKUP`, defaults to `DELIVERY`), `deliveryNotes`, `paymentMethod` (`WAVE` | `ORANGE` | `MTN` | `PICKUP`), and `couponCode` are optional.
+
+> `paymentMethod` is stored as metadata only — it records the customer's stated preference and is not wired to the Flutterwave payment provider used by `POST /payments/initialize`.
 
 **Response `201`:** the created order, including its items.
 ```json

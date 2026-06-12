@@ -18,6 +18,8 @@
 | `PaymentStatus` | `PENDING`, `SUCCESS`, `FAILED`, `CANCELLED` |
 | `CouponType` | `PERCENTAGE`, `FIXED` |
 | `ProductType` | `PRODUCT`, `SERVICE`, `BOUTIQUE`, `REGISTRY` |
+| `DeliveryMethod` | `DELIVERY`, `PICKUP` |
+| `PaymentMethod` | `WAVE`, `ORANGE`, `MTN`, `PICKUP` |
 
 ---
 
@@ -141,6 +143,9 @@ Customer order.
 | `shippingCity` | String | |
 | `shippingState` | String | |
 | `shippingCountry` | String | Default: `Bangladesh` |
+| `deliveryMethod` | DeliveryMethod | `DELIVERY` \| `PICKUP`, default: `DELIVERY` |
+| `deliveryNotes` | String? | Landmark / delivery instructions |
+| `paymentMethod` | PaymentMethod? | `WAVE` \| `ORANGE` \| `MTN` \| `PICKUP` — metadata only |
 | `subtotal` | Decimal | Sum of line items |
 | `deliveryFee` | Decimal | Default: 0 |
 | `discountAmount` | Decimal | Default: 0 |
@@ -300,6 +305,7 @@ Located at `backend/prisma/migrations/`.
 | `20260605000000_add_cart_wishlist_coupon_review_gallery` | Adds Cart, CartItem, WishlistItem, Coupon, ProductImage, Review; extends Order and Product |
 | `20260609190445_add_product_brand_avg_rating` | Adds `Product.brand`, `Product.avgRating`, `Product.reviewCount` |
 | `20260609192728_add_product_type_location_isbooked` | Adds `ProductType` enum, `Product.type`, `Product.location`, `Product.isBooked` |
+| `20260612194317_add_delivery_and_payment_method_to_order` | Adds `DeliveryMethod` and `PaymentMethod` enums, `Order.deliveryMethod`, `Order.deliveryNotes`, `Order.paymentMethod` |
 
 ### Running Migrations
 

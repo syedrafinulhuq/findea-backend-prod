@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsEmail, IsEnum, IsInt, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
-import { OrderStatus } from '@prisma/client';
+import { DeliveryMethod, OrderStatus, PaymentMethod } from '@prisma/client';
 
 class OrderItemDto {
   @ApiProperty() @IsString() productId: string;
@@ -17,6 +17,9 @@ export class CreateOrderDto {
   @ApiProperty() @IsString() shippingCity: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() shippingState?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsString() shippingCountry?: string;
+  @ApiProperty({ required: false, enum: DeliveryMethod }) @IsOptional() @IsEnum(DeliveryMethod) deliveryMethod?: DeliveryMethod;
+  @ApiProperty({ required: false }) @IsOptional() @IsString() deliveryNotes?: string;
+  @ApiProperty({ required: false, enum: PaymentMethod }) @IsOptional() @IsEnum(PaymentMethod) paymentMethod?: PaymentMethod;
   @ApiProperty({ required: false }) @IsOptional() @IsString() couponCode?: string;
   @ApiProperty({ type: [OrderItemDto] }) @IsArray() @ValidateNested({ each: true }) @Type(() => OrderItemDto) items: OrderItemDto[];
 }

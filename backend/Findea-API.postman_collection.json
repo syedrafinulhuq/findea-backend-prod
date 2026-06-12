@@ -304,6 +304,20 @@
           }
         },
         {
+          "name": "List Products – Filter by Multiple Categories",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?category=woman,man",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "category", "value": "woman,man", "description": "Comma-separated slugs, or repeat the param: category=woman&category=man" }
+              ]
+            }
+          }
+        },
+        {
           "name": "List Products – Search",
           "request": {
             "method": "GET",
@@ -402,6 +416,34 @@
                 { "key": "type",     "value": "PRODUCT", "description": "PRODUCT | SERVICE | BOUTIQUE | REGISTRY" },
                 { "key": "location", "value": "Dhaka" },
                 { "key": "booked",   "value": "false" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Products – Filter by Multiple Locations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products?location=London,Paris",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "location", "value": "London,Paris", "description": "Comma-separated values, or repeat the param: location=London&location=Paris" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Filter Facets (Search Sidebar)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/products/filters?type=PRODUCT",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "filters"],
+              "query": [
+                { "key": "type", "value": "PRODUCT", "description": "Optional — same filters as GET /products (search, category, brand, type, location, minPrice, maxPrice, minRating, inStock, booked)" }
               ]
             }
           }
@@ -625,7 +667,7 @@
             "url": { "raw": "{{baseUrl}}/orders", "host": ["{{baseUrl}}"], "path": ["orders"] },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"customerEmail\": \"sarah@example.com\",\n  \"customerName\": \"Sarah Rahman\",\n  \"customerPhone\": \"+8801811111111\",\n  \"shippingLine1\": \"24 Gulshan Avenue\",\n  \"shippingLine2\": \"Apt 4B\",\n  \"shippingCity\": \"Dhaka\",\n  \"shippingState\": \"Dhaka\",\n  \"shippingCountry\": \"Bangladesh\",\n  \"couponCode\": \"DEVTEST\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
+              "raw": "{\n  \"customerEmail\": \"sarah@example.com\",\n  \"customerName\": \"Sarah Rahman\",\n  \"customerPhone\": \"+8801811111111\",\n  \"shippingLine1\": \"24 Gulshan Avenue\",\n  \"shippingLine2\": \"Apt 4B\",\n  \"shippingCity\": \"Dhaka\",\n  \"shippingState\": \"Dhaka\",\n  \"shippingCountry\": \"Bangladesh\",\n  \"deliveryMethod\": \"DELIVERY\",\n  \"deliveryNotes\": \"Leave with the security guard if not home.\",\n  \"paymentMethod\": \"WAVE\",\n  \"couponCode\": \"DEVTEST\",\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 1 }\n  ]\n}"
             }
           },
           "event": [{

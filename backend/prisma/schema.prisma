@@ -40,6 +40,18 @@ enum ProductType {
   REGISTRY
 }
 
+enum DeliveryMethod {
+  DELIVERY
+  PICKUP
+}
+
+enum PaymentMethod {
+  WAVE
+  ORANGE
+  MTN
+  PICKUP
+}
+
 model User {
   id                   String         @id @default(cuid())
   email                String         @unique
@@ -131,6 +143,9 @@ model Order {
   shippingCity    String
   shippingState   String?
   shippingCountry String      @default("Bangladesh")
+  deliveryMethod  DeliveryMethod @default(DELIVERY)
+  deliveryNotes   String?
+  paymentMethod   PaymentMethod?
   subtotal        Decimal     @db.Decimal(10, 2)
   deliveryFee     Decimal     @db.Decimal(10, 2) @default(0)
   discountAmount  Decimal     @db.Decimal(10, 2) @default(0)

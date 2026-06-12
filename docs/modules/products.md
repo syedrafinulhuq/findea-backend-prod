@@ -18,6 +18,7 @@ Manages the product catalog, categories, and product gallery images.
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | GET | `/products` | No | List products (filtered, sorted, paginated) |
+| GET | `/products/filters` | No | Facet counts for the search/filter sidebar |
 | GET | `/products/categories` | No | List all categories |
 | GET | `/products/:slug` | No | Get single product by slug |
 | POST | `/products` | Admin | Create product |
@@ -32,10 +33,10 @@ Manages the product catalog, categories, and product gallery images.
 | Parameter | Type | Description |
 |---|---|---|
 | `search` | string | Case-insensitive match in `name` and `description` |
-| `category` | string | Filter by category slug |
+| `category` | string[] | Filter by category slug(s) — repeat the param or comma-separate, e.g. `?category=woman,man` |
 | `brand` | string | Filter by brand (case-insensitive contains) |
 | `type` | `PRODUCT\|SERVICE\|BOUTIQUE\|REGISTRY` | Filter by product type |
-| `location` | string | Filter by location (contains) |
+| `location` | string[] | Filter by location(s) (exact, case-insensitive) — repeat the param or comma-separate, e.g. `?location=London,Paris` |
 | `minPrice` | number | Minimum price (inclusive) |
 | `maxPrice` | number | Maximum price (inclusive) |
 | `minRating` | number | Minimum `avgRating` (0–5) |
@@ -44,6 +45,22 @@ Manages the product catalog, categories, and product gallery images.
 | `sortBy` | string | See sort options below |
 | `page` | number | Page number (default: 1) |
 | `limit` | number | Items per page (default: 20) |
+
+## Filter Facets (`GET /products/filters`)
+
+Returns the option counts needed to render the search/filter sidebar. Accepts the same query parameters as `GET /products` (excluding `sortBy`/`page`/`limit`) — each facet's counts reflect every *other* applied filter, so the dimension being counted isn't filtered against itself.
+
+```typescript
+{
+  total: number;                                     // matches the "X Products found" header
+  type: { value: 'ALL' | ProductType; label: string; count: number }[];      // Type section
+  category: { slug: string; name: string; count: number }[];                 // Category section
+  price: { min: string | null; max: string | null };                         // Price slider bounds
+  availability: { inStock: number; booked: number };                         // Availability section
+  rating: { minRating: 4 | 3 | 2 | 1; count: number }[];                      // Rating "X and up" section
+  location: { value: string; count: number }[];                              // Location section
+}
+```
 
 ### Sort Options
 
@@ -96,6 +113,7 @@ Same as `CreateProductDto`, all fields optional.
 ## Behavior Notes
 
 - All filters are additive (AND logic) — every provided filter must match.
+- `category` and `location` accept multiple values (OR within the dimension); selecting "Fashion" and "Jewelry" returns products in either category.
 - `isActive = false` products are excluded from public listing. Soft-delete sets this flag.
 - `avgRating` and `reviewCount` are maintained by the Reviews module — not calculated on the fly.
 - Product slug must be unique; it is used as the canonical URL identifier.

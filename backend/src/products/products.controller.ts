@@ -17,6 +17,7 @@ export class ProductsController {
   @Post('categories') createCategory(@Body() dto: CreateCategoryDto) { return this.products.createCategory(dto); }
 
   @Get() list(@Query() q: ProductQueryDto) { return this.products.list(q); }
+  @Get('filters') filters(@Query() q: ProductQueryDto) { return this.products.filters(q); }
   @Get(':slug') detail(@Param('slug') slug: string) { return this.products.detail(slug); }
 
   @ApiBearerAuth() @UseGuards(JwtAuthGuard, RolesGuard) @Roles(Role.ADMIN)
