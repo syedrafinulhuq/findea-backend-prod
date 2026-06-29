@@ -77,7 +77,7 @@ async function main() {
         city: 'Dhaka',
         state: 'Dhaka',
         postalCode: '1212',
-        country: 'Bangladesh',
+        country: "Côte d'Ivoire",
         isDefault: true,
       },
     });
@@ -89,7 +89,7 @@ async function main() {
         city: 'Dhaka',
         state: 'Dhaka',
         postalCode: '1000',
-        country: 'Bangladesh',
+        country: "Côte d'Ivoire",
         isDefault: false,
       },
     });
@@ -105,7 +105,7 @@ async function main() {
         city: 'Chattogram',
         state: 'Chattogram',
         postalCode: '4100',
-        country: 'Bangladesh',
+        country: "Côte d'Ivoire",
         isDefault: true,
       },
     });
@@ -299,9 +299,9 @@ async function main() {
 │    demo@example.com    – Demo User               │
 ├──────────────────────────────────────────────────┤
 │  COUPON CODES                                    │
-│    WELCOME10  – 10% off (min order ৳50)          │
-│    FLAT500    – ৳500 off (min order ৳2000)       │
-│    SUMMER15   – 15% off (min order ৳100)         │
+│    WELCOME10  – 10% off (min order CFA 50)          │
+│    FLAT500    – CFA 500 off (min order CFA 2000)       │
+│    SUMMER15   – 15% off (min order CFA 100)         │
 │    DEVTEST    – 50% off (no minimum, dev only)   │
 └──────────────────────────────────────────────────┘
 `);

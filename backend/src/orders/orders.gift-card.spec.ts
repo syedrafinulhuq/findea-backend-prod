@@ -30,7 +30,8 @@ describe('OrdersService gift card checkout', () => {
   it('applies the gift card up to the payable amount and reduces the total', async () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any));
+    const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     // product price 100, qty 1 -> subtotal 100, + delivery 80 = payable 180
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(100) }]);
@@ -51,7 +52,8 @@ describe('OrdersService gift card checkout', () => {
   it('caps redemption at the payable amount when the card exceeds it', async () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any));
+    const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(20) }]);
     tx.product.updateMany.mockResolvedValue({ count: 1 });
@@ -70,7 +72,8 @@ describe('OrdersService gift card checkout', () => {
   it('rejects an unknown gift card code', async () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any));
+    const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(20) }]);
     tx.product.updateMany.mockResolvedValue({ count: 1 });
