@@ -207,21 +207,47 @@ export class ServicesService {
     const scheduledAt = new Date(dto.scheduledAt);
     if (scheduledAt.getTime() <= Date.now()) throw new BadRequestException('scheduledAt must be in the future');
     const bookingNumber = `BKG-${Date.now()}-${randomBytes(3).toString('hex').toUpperCase()}`;
-    return this.prisma.booking.create({
-      data: {
-        bookingNumber,
-        serviceId: service.id,
-        providerId: service.providerId,
-        userId,
-        customerName: dto.customerName,
-        customerEmail: dto.customerEmail,
-        customerPhone: dto.customerPhone,
-        notes: dto.notes,
-        scheduledAt,
-        price: service.price,
-      },
-      include: { service: { select: { id: true, name: true } } },
+
+    // Reject overlapping bookings for the same provider. Check and create share
+    // a transaction to shrink (not fully eliminate) the race window.
+    return this.prisma.$transaction(async (tx) => {
+      if (await this.hasConflict(tx, service.providerId, scheduledAt, service.durationMinutes)) {
+        throw new BadRequestException('That time slot is no longer available for this provider');
+      }
+      return tx.booking.create({
+        data: {
+          bookingNumber,
+          serviceId: service.id,
+          providerId: service.providerId,
+          userId,
+          customerName: dto.customerName,
+          customerEmail: dto.customerEmail,
+          customerPhone: dto.customerPhone,
+          notes: dto.notes,
+          scheduledAt,
+          price: service.price,
+        },
+        include: { service: { select: { id: true, name: true } } },
+      });
     });
+  }
+
+  /** True if the provider has an active (pending/confirmed) booking overlapping the requested slot. */
+  private async hasConflict(tx: Prisma.TransactionClient, providerId: string, start: Date, durationMinutes: number | null) {
+    const end = new Date(start.getTime() + this.durationMs(durationMinutes));
+    const active = await tx.booking.findMany({
+      where: { providerId, status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED] } },
+      include: { service: { select: { durationMinutes: true } } },
+    });
+    return active.some((b) => {
+      const bStart = b.scheduledAt;
+      const bEnd = new Date(bStart.getTime() + this.durationMs(b.service.durationMinutes));
+      return start < bEnd && bStart < end; // half-open interval overlap
+    });
+  }
+
+  private durationMs(durationMinutes: number | null) {
+    return (durationMinutes ?? 60) * 60_000; // default 1h when a service has no set duration
   }
 
   myCustomerBookings(userId: string) {

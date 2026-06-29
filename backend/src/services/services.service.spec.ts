@@ -6,7 +6,7 @@ function createPrismaMock() {
   const prisma: any = {
     service: { findFirst: jest.fn(), findUnique: jest.fn() },
     serviceProvider: { findUnique: jest.fn() },
-    booking: { create: jest.fn() },
+    booking: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
   };
   prisma.$transaction = jest.fn((arg: any) => (typeof arg === 'function' ? arg(prisma) : Promise.all(arg)));
   return prisma;
@@ -50,6 +50,33 @@ describe('ServicesService', () => {
       await expect(
         service.book('u1', { serviceId: 'x', scheduledAt: future, customerName: 'A', customerEmail: 'a@x.com' }),
       ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('rejects a slot that overlaps an existing active booking for the provider', async () => {
+      const start = new Date(Date.now() + 86_400_000);
+      prisma.service.findFirst.mockResolvedValue({ id: 's1', providerId: 'p1', price: new Prisma.Decimal(75), durationMinutes: 60 });
+      // existing booking starts 30min into the requested 60min slot -> overlap
+      prisma.booking.findMany.mockResolvedValue([
+        { scheduledAt: new Date(start.getTime() + 30 * 60_000), service: { durationMinutes: 60 } },
+      ]);
+
+      await expect(
+        service.book('u1', { serviceId: 's1', scheduledAt: start.toISOString(), customerName: 'A', customerEmail: 'a@x.com' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.booking.create).not.toHaveBeenCalled();
+    });
+
+    it('allows a non-overlapping slot (existing booking ends before the new one starts)', async () => {
+      const start = new Date(Date.now() + 86_400_000);
+      prisma.service.findFirst.mockResolvedValue({ id: 's1', providerId: 'p1', price: new Prisma.Decimal(75), durationMinutes: 60 });
+      // existing booking is 2h earlier and only 60min long -> no overlap
+      prisma.booking.findMany.mockResolvedValue([
+        { scheduledAt: new Date(start.getTime() - 120 * 60_000), service: { durationMinutes: 60 } },
+      ]);
+      prisma.booking.create.mockImplementation(({ data }: any) => ({ id: 'b1', ...data }));
+
+      await service.book('u1', { serviceId: 's1', scheduledAt: start.toISOString(), customerName: 'A', customerEmail: 'a@x.com' });
+      expect(prisma.booking.create).toHaveBeenCalled();
     });
   });
 
