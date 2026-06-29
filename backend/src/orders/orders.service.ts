@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma, OrderStatus } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -6,13 +7,15 @@ import { QueueService } from '../queue/queue.service';
 import { GiftCardsService } from '../gift-cards/gift-cards.service';
 import { CreateOrderDto, OrderQueryDto, UpdateOrderStatusDto } from './dto';
 
+const DEFAULT_COUNTRY = "Côte d'Ivoire";
+
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService, private queue: QueueService, private giftCards: GiftCardsService) { }
+  constructor(private prisma: PrismaService, private queue: QueueService, private giftCards: GiftCardsService, private config: ConfigService) { }
 
   async create(dto: CreateOrderDto, userId?: string) {
     const productIds = dto.items.map(i => i.productId);
-    const deliveryFee = new Prisma.Decimal(80);
+    const deliveryFee = new Prisma.Decimal(this.config.get<number>('DELIVERY_FEE', 1000));
 
     const order = await this.prisma.$transaction(async (tx) => {
       const products = await tx.product.findMany({ where: { id: { in: productIds }, isActive: true } });
@@ -72,7 +75,7 @@ export class OrdersService {
           orderNumber, userId, couponId, giftCardId,
           customerEmail: dto.customerEmail, customerName: dto.customerName, customerPhone: dto.customerPhone,
           shippingLine1: dto.shippingLine1, shippingLine2: dto.shippingLine2, shippingCity: dto.shippingCity,
-          shippingState: dto.shippingState, shippingCountry: dto.shippingCountry || 'Bangladesh',
+          shippingState: dto.shippingState, shippingCountry: dto.shippingCountry || DEFAULT_COUNTRY,
           deliveryMethod: dto.deliveryMethod, deliveryNotes: dto.deliveryNotes, paymentMethod: dto.paymentMethod,
           subtotal, deliveryFee, discountAmount, giftCardAmount, total,
           items: { create: items },

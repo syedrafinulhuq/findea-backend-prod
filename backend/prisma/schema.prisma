@@ -371,7 +371,7 @@ model Address {
   city       String
   state      String?
   postalCode String?
-  country    String   @default("Bangladesh")
+  country    String   @default("Côte d'Ivoire")
   isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -437,7 +437,7 @@ model Order {
   shippingLine2   String?
   shippingCity    String
   shippingState   String?
-  shippingCountry String      @default("Bangladesh")
+  shippingCountry String      @default("Côte d'Ivoire")
   deliveryMethod  DeliveryMethod @default(DELIVERY)
   deliveryNotes   String?
   paymentMethod   PaymentMethod?
@@ -482,7 +482,7 @@ model Payment {
   id              String        @id @default(cuid())
   orderId         String        @unique
   amount          Decimal       @db.Decimal(10, 2)
-  currency        String        @default("BDT")
+  currency        String        @default("XOF")
   status          PaymentStatus @default(PENDING)
   provider        String        @default("flutterwave")
   transactionRef  String        @unique

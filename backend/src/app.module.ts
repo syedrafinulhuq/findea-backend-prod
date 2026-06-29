@@ -55,6 +55,8 @@ import { HealthModule } from './health/health.module';
         FLUTTERWAVE_ENCRYPTION_KEY: Joi.string().optional(),
         FLUTTERWAVE_WEBHOOK_HASH: Joi.string().required(),
         LOW_STOCK_THRESHOLD: Joi.number().default(5),
+        CURRENCY: Joi.string().default('XOF'),
+        DELIVERY_FEE: Joi.number().default(1000),
       }),
     }),
     LoggerModule.forRoot({ pinoHttp: { transport: process.env.NODE_ENV !== 'production' ? { target: 'pino-pretty' } : undefined } }),

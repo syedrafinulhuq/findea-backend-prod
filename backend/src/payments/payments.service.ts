@@ -19,7 +19,7 @@ export class PaymentsService {
     const payload = {
       tx_ref: txRef,
       amount: order.total.toString(),
-      currency: 'BDT',
+      currency: this.config.get<string>('CURRENCY', 'XOF'),
       redirect_url: `${this.config.get('FRONTEND_URL')}/payment/callback`,
       customer: { email: order.customerEmail, name: order.customerName, phonenumber: order.customerPhone },
       customizations: { title: 'Fidea Order Payment', description: `Payment for ${order.orderNumber}` },
