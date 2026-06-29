@@ -22,6 +22,7 @@ import { CouponsModule } from './coupons/coupons.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { AdminModule } from './admin/admin.module';
 import { BoutiquesModule } from './boutiques/boutiques.module';
+import { ServicesModule } from './services/services.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -83,6 +84,7 @@ import { HealthModule } from './health/health.module';
     ReviewsModule,
     AdminModule,
     BoutiquesModule,
+    ServicesModule,
     HealthModule,
   ],
 })

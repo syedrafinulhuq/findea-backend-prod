@@ -19,6 +19,13 @@ enum BoutiqueStatus {
   REJECTED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -79,6 +86,8 @@ model User {
   wishlistItems        WishlistItem[]
   reviews              Review[]
   boutique             Boutique?
+  serviceProvider      ServiceProvider?
+  bookings             Booking[]
 }
 
 model Boutique {
@@ -105,6 +114,91 @@ model Boutique {
 
   @@index([status])
   @@index([city])
+}
+
+model ServiceProvider {
+  id             String         @id @default(cuid())
+  ownerId        String         @unique
+  name           String
+  slug           String         @unique
+  bio            String?
+  logoUrl        String?
+  bannerUrl      String?
+  location       String?
+  city           String?
+  phone          String?
+  email          String?
+  status         BoutiqueStatus @default(PENDING)
+  isActive       Boolean        @default(true)
+  avgRating      Float          @default(0)
+  reviewCount    Int            @default(0)
+  commissionRate Decimal        @default(0) @db.Decimal(5, 2)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  owner          User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  services       Service[]
+  bookings       Booking[]
+
+  @@index([status])
+  @@index([city])
+}
+
+model ServiceCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  services  Service[]
+}
+
+model Service {
+  id              String          @id @default(cuid())
+  providerId      String
+  categoryId      String?
+  name            String
+  slug            String          @unique
+  description     String?
+  price           Decimal         @db.Decimal(10, 2)
+  durationMinutes Int?
+  imageUrl        String?
+  location        String?
+  isActive        Boolean         @default(true)
+  avgRating       Float           @default(0)
+  reviewCount     Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  provider        ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  category        ServiceCategory? @relation(fields: [categoryId], references: [id])
+  bookings        Booking[]
+
+  @@index([providerId])
+  @@index([categoryId])
+}
+
+model Booking {
+  id            String          @id @default(cuid())
+  bookingNumber String          @unique
+  serviceId     String
+  providerId    String
+  userId        String?
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  scheduledAt   DateTime
+  notes         String?
+  price         Decimal         @db.Decimal(10, 2)
+  status        BookingStatus   @default(PENDING)
+  cancelReason  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  service       Service         @relation(fields: [serviceId], references: [id])
+  provider      ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([serviceId])
+  @@index([providerId])
+  @@index([userId])
+  @@index([status])
 }
 
 model Address {
