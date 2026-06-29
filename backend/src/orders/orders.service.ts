@@ -3,11 +3,12 @@ import { Prisma, OrderStatus } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
+import { GiftCardsService } from '../gift-cards/gift-cards.service';
 import { CreateOrderDto, OrderQueryDto, UpdateOrderStatusDto } from './dto';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService, private queue: QueueService) { }
+  constructor(private prisma: PrismaService, private queue: QueueService, private giftCards: GiftCardsService) { }
 
   async create(dto: CreateOrderDto, userId?: string) {
     const productIds = dto.items.map(i => i.productId);
@@ -47,16 +48,33 @@ export class OrdersService {
         }
       }
 
-      const total = subtotal.plus(deliveryFee).minus(discountAmount);
+      const payable = subtotal.plus(deliveryFee).minus(discountAmount);
       const orderNumber = `FID-${Date.now()}-${randomBytes(3).toString('hex').toUpperCase()}`;
+
+      // Apply a gift card last: it covers up to the remaining payable amount.
+      let giftCardAmount = new Prisma.Decimal(0);
+      let giftCardId: string | undefined;
+      if (dto.giftCardCode) {
+        const card = await tx.giftCard.findUnique({ where: { code: dto.giftCardCode } });
+        const available = card ? Prisma.Decimal.min(card.balance, payable) : new Prisma.Decimal(0);
+        if (available.greaterThan(0)) {
+          const redeemed = await this.giftCards.redeemTx(tx, dto.giftCardCode, available, orderNumber, 'order');
+          giftCardAmount = available;
+          giftCardId = redeemed.id;
+        } else if (!card) {
+          throw new BadRequestException('Gift card not found');
+        }
+      }
+
+      const total = payable.minus(giftCardAmount);
       return tx.order.create({
         data: {
-          orderNumber, userId, couponId,
+          orderNumber, userId, couponId, giftCardId,
           customerEmail: dto.customerEmail, customerName: dto.customerName, customerPhone: dto.customerPhone,
           shippingLine1: dto.shippingLine1, shippingLine2: dto.shippingLine2, shippingCity: dto.shippingCity,
           shippingState: dto.shippingState, shippingCountry: dto.shippingCountry || 'Bangladesh',
           deliveryMethod: dto.deliveryMethod, deliveryNotes: dto.deliveryNotes, paymentMethod: dto.paymentMethod,
-          subtotal, deliveryFee, discountAmount, total,
+          subtotal, deliveryFee, discountAmount, giftCardAmount, total,
           items: { create: items },
         }, include: { items: { include: { product: true } } },
       });

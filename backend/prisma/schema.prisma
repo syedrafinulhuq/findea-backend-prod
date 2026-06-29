@@ -19,6 +19,45 @@ enum BoutiqueStatus {
   REJECTED
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum RegistryType {
+  WEDDING
+  BABY
+  BIRTHDAY
+  OTHER
+}
+
+enum ReservationStatus {
+  RESERVED
+  PURCHASED
+  CANCELLED
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  DISABLED
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -79,6 +118,12 @@ model User {
   wishlistItems        WishlistItem[]
   reviews              Review[]
   boutique             Boutique?
+  serviceProvider      ServiceProvider?
+  bookings             Booking[]
+  registries           Registry[]
+  registryReservations RegistryReservation[]
+  giftCardsPurchased   GiftCard[]
+  subscriptions        Subscription[]
 }
 
 model Boutique {
@@ -105,6 +150,216 @@ model Boutique {
 
   @@index([status])
   @@index([city])
+}
+
+model ServiceProvider {
+  id             String         @id @default(cuid())
+  ownerId        String         @unique
+  name           String
+  slug           String         @unique
+  bio            String?
+  logoUrl        String?
+  bannerUrl      String?
+  location       String?
+  city           String?
+  phone          String?
+  email          String?
+  status         BoutiqueStatus @default(PENDING)
+  isActive       Boolean        @default(true)
+  avgRating      Float          @default(0)
+  reviewCount    Int            @default(0)
+  commissionRate Decimal        @default(0) @db.Decimal(5, 2)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  owner          User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  services       Service[]
+  bookings       Booking[]
+
+  @@index([status])
+  @@index([city])
+}
+
+model ServiceCategory {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  services  Service[]
+}
+
+model Service {
+  id              String          @id @default(cuid())
+  providerId      String
+  categoryId      String?
+  name            String
+  slug            String          @unique
+  description     String?
+  price           Decimal         @db.Decimal(10, 2)
+  durationMinutes Int?
+  imageUrl        String?
+  location        String?
+  isActive        Boolean         @default(true)
+  avgRating       Float           @default(0)
+  reviewCount     Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  provider        ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  category        ServiceCategory? @relation(fields: [categoryId], references: [id])
+  bookings        Booking[]
+
+  @@index([providerId])
+  @@index([categoryId])
+}
+
+model Booking {
+  id            String          @id @default(cuid())
+  bookingNumber String          @unique
+  serviceId     String
+  providerId    String
+  userId        String?
+  customerName  String
+  customerEmail String
+  customerPhone String?
+  scheduledAt   DateTime
+  notes         String?
+  price         Decimal         @db.Decimal(10, 2)
+  status        BookingStatus   @default(PENDING)
+  cancelReason  String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  service       Service         @relation(fields: [serviceId], references: [id])
+  provider      ServiceProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@index([serviceId])
+  @@index([providerId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Registry {
+  id              String         @id @default(cuid())
+  ownerId         String
+  title           String
+  slug            String         @unique
+  type            RegistryType   @default(WEDDING)
+  description     String?
+  coverImageUrl   String?
+  eventDate       DateTime?
+  shippingLine1   String?
+  shippingCity    String?
+  shippingCountry String?
+  isPublic        Boolean        @default(true)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items           RegistryItem[]
+
+  @@index([ownerId])
+  @@index([type])
+}
+
+model RegistryItem {
+  id           String                @id @default(cuid())
+  registryId   String
+  productId    String
+  desiredQty   Int                   @default(1)
+  reservedQty  Int                   @default(0)
+  note         String?
+  createdAt    DateTime              @default(now())
+  registry     Registry              @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  product      Product               @relation(fields: [productId], references: [id])
+  reservations RegistryReservation[]
+
+  @@unique([registryId, productId])
+  @@index([registryId])
+}
+
+model RegistryReservation {
+  id             String            @id @default(cuid())
+  registryItemId String
+  userId         String?
+  guestName      String
+  guestEmail     String
+  quantity       Int               @default(1)
+  message        String?
+  status         ReservationStatus @default(RESERVED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  registryItem   RegistryItem      @relation(fields: [registryItemId], references: [id], onDelete: Cascade)
+  user           User?             @relation(fields: [userId], references: [id])
+
+  @@index([registryItemId])
+  @@index([userId])
+}
+
+model GiftCard {
+  id             String                @id @default(cuid())
+  code           String                @unique
+  initialAmount  Decimal               @db.Decimal(10, 2)
+  balance        Decimal               @db.Decimal(10, 2)
+  currency       String                @default("XOF")
+  status         GiftCardStatus        @default(ACTIVE)
+  purchaserId    String?
+  senderName     String?
+  recipientName  String?
+  recipientEmail String?
+  message        String?
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  purchaser      User?                 @relation(fields: [purchaserId], references: [id])
+  transactions   GiftCardTransaction[]
+  orders         Order[]
+
+  @@index([purchaserId])
+  @@index([status])
+}
+
+model GiftCardTransaction {
+  id         String   @id @default(cuid())
+  giftCardId String
+  amount     Decimal  @db.Decimal(10, 2)
+  reason     String?
+  orderId    String?
+  createdAt  DateTime @default(now())
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+}
+
+model SubscriptionPlan {
+  id            String               @id @default(cuid())
+  name          String
+  slug          String               @unique
+  description   String?
+  price         Decimal              @db.Decimal(10, 2)
+  interval      SubscriptionInterval @default(MONTHLY)
+  features      String[]
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  startedAt          DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               SubscriptionPlan   @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
 }
 
 model Address {
@@ -158,6 +413,7 @@ model Product {
   wishlistItems WishlistItem[]
   images       ProductImage[]
   reviews      Review[]
+  registryItems RegistryItem[]
 
   @@index([boutiqueId])
 }
@@ -188,8 +444,10 @@ model Order {
   subtotal        Decimal     @db.Decimal(10, 2)
   deliveryFee     Decimal     @db.Decimal(10, 2) @default(0)
   discountAmount  Decimal     @db.Decimal(10, 2) @default(0)
+  giftCardAmount  Decimal     @db.Decimal(10, 2) @default(0)
   total           Decimal     @db.Decimal(10, 2)
   couponId        String?
+  giftCardId      String?
   trackingNumber  String?
   status          OrderStatus @default(PENDING)
   cancelReason    String?
@@ -197,6 +455,7 @@ model Order {
   updatedAt       DateTime    @updatedAt
   user            User?       @relation(fields: [userId], references: [id])
   coupon          Coupon?     @relation(fields: [couponId], references: [id])
+  giftCard        GiftCard?   @relation(fields: [giftCardId], references: [id])
   items           OrderItem[]
   payment         Payment?
   reviews         Review[]
