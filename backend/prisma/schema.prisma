@@ -8,7 +8,15 @@ datasource db {
 
 enum Role {
   CUSTOMER
+  VENDOR
   ADMIN
+}
+
+enum BoutiqueStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+  REJECTED
 }
 
 enum OrderStatus {
@@ -70,6 +78,33 @@ model User {
   cart                 Cart?
   wishlistItems        WishlistItem[]
   reviews              Review[]
+  boutique             Boutique?
+}
+
+model Boutique {
+  id             String         @id @default(cuid())
+  ownerId        String         @unique
+  name           String
+  slug           String         @unique
+  description    String?
+  logoUrl        String?
+  bannerUrl      String?
+  location       String?
+  city           String?
+  phone          String?
+  email          String?
+  status         BoutiqueStatus @default(PENDING)
+  isActive       Boolean        @default(true)
+  avgRating      Float          @default(0)
+  reviewCount    Int            @default(0)
+  commissionRate Decimal        @default(0) @db.Decimal(5, 2)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  owner          User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  products       Product[]
+
+  @@index([status])
+  @@index([city])
 }
 
 model Address {
@@ -105,6 +140,7 @@ model Product {
   stock         Int            @default(0)
   imageUrl      String?
   categoryId    String?
+  boutiqueId    String?
   brand         String?
   type          ProductType    @default(PRODUCT)
   location      String?
@@ -116,11 +152,14 @@ model Product {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   category     Category?      @relation(fields: [categoryId], references: [id])
+  boutique     Boutique?      @relation(fields: [boutiqueId], references: [id])
   orderItems   OrderItem[]
   cartItems    CartItem[]
   wishlistItems WishlistItem[]
   images       ProductImage[]
   reviews      Review[]
+
+  @@index([boutiqueId])
 }
 
 model ProductImage {
