@@ -26,6 +26,9 @@ import { ServicesModule } from './services/services.module';
 import { RegistriesModule } from './registries/registries.module';
 import { GiftCardsModule } from './gift-cards/gift-cards.module';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
+import { BlogModule } from './blog/blog.module';
+import { ContactModule } from './contact/contact.module';
+import { FeedbackModule } from './feedback/feedback.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -93,6 +96,9 @@ import { HealthModule } from './health/health.module';
     RegistriesModule,
     GiftCardsModule,
     SubscriptionsModule,
+    BlogModule,
+    ContactModule,
+    FeedbackModule,
     HealthModule,
   ],
 })
