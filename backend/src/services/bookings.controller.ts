@@ -15,6 +15,8 @@ export class BookingsController {
 
   @Get('me') myBookings(@CurrentUser() user: AuthUser) { return this.services.myCustomerBookings(user.id); }
 
+  @Post(':id/pay') pay(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.services.payBooking(user.id, id); }
+
   @Post(':id/cancel') cancel(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() dto: UpdateBookingStatusDto) {
     return this.services.cancelBooking(user.id, id, dto.cancelReason);
   }

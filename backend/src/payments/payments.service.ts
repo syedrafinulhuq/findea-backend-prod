@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GiftCardStatus, OrderStatus, PaymentPurpose, PaymentStatus, Prisma, SubscriptionStatus } from '@prisma/client';
+import { BookingStatus, GiftCardStatus, OrderStatus, PaymentPurpose, PaymentStatus, Prisma, SubscriptionStatus } from '@prisma/client';
 import { timingSafeEqual } from 'crypto';
 import axios from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
@@ -81,6 +81,29 @@ export class PaymentsService {
     });
   }
 
+  // ---- booking payments ----
+
+  async initializeBooking(bookingId: string) {
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId }, include: { payment: true, service: { select: { name: true } } } });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.status !== BookingStatus.PENDING) throw new BadRequestException('Booking is not awaiting payment');
+    if (booking.payment?.checkoutUrl) return booking.payment;
+    const txRef = `FID-BKG-${booking.bookingNumber}-${Date.now()}`;
+    const link = await this.createCheckout({
+      txRef,
+      amount: booking.price,
+      customer: { email: booking.customerEmail, name: booking.customerName, phonenumber: booking.customerPhone },
+      title: 'Findéa Booking',
+      description: `Booking ${booking.bookingNumber} — ${booking.service.name}`,
+      meta: { purpose: PaymentPurpose.BOOKING, bookingId: booking.id },
+    });
+    return this.prisma.payment.upsert({
+      where: { bookingId: booking.id },
+      update: { transactionRef: txRef, checkoutUrl: link, status: PaymentStatus.PENDING },
+      create: { purpose: PaymentPurpose.BOOKING, bookingId: booking.id, amount: booking.price, currency: this.currency(), transactionRef: txRef, checkoutUrl: link },
+    });
+  }
+
   // ---- verification / activation ----
 
   async verify(transactionId: string) {
@@ -99,12 +122,12 @@ export class PaymentsService {
       return p;
     });
 
-    if (success) await this.queue.addPaymentJob('payment-success', { paymentId: updated.id, purpose: payment.purpose, orderId: payment.orderId, giftCardId: payment.giftCardId, subscriptionId: payment.subscriptionId });
+    if (success) await this.queue.addPaymentJob('payment-success', { paymentId: updated.id, purpose: payment.purpose, orderId: payment.orderId, giftCardId: payment.giftCardId, subscriptionId: payment.subscriptionId, bookingId: payment.bookingId });
     return updated;
   }
 
   /** Activates the entity a successful payment is for. Runs inside the verify transaction. */
-  private async activate(db: Prisma.TransactionClient, payment: { purpose: PaymentPurpose; orderId: string | null; giftCardId: string | null; subscriptionId: string | null }) {
+  private async activate(db: Prisma.TransactionClient, payment: { purpose: PaymentPurpose; orderId: string | null; giftCardId: string | null; subscriptionId: string | null; bookingId: string | null }) {
     switch (payment.purpose) {
       case PaymentPurpose.ORDER:
         if (payment.orderId) await db.order.update({ where: { id: payment.orderId }, data: { status: OrderStatus.PAID } });
@@ -114,6 +137,9 @@ export class PaymentsService {
         break;
       case PaymentPurpose.SUBSCRIPTION:
         if (payment.subscriptionId) await db.subscription.update({ where: { id: payment.subscriptionId }, data: { status: SubscriptionStatus.ACTIVE } });
+        break;
+      case PaymentPurpose.BOOKING:
+        if (payment.bookingId) await db.booking.update({ where: { id: payment.bookingId }, data: { status: BookingStatus.CONFIRMED } });
         break;
     }
   }

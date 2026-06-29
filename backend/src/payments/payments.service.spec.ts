@@ -1,4 +1,4 @@
-import { GiftCardStatus, OrderStatus, PaymentPurpose, PaymentStatus, Prisma, SubscriptionStatus } from '@prisma/client';
+import { BookingStatus, GiftCardStatus, OrderStatus, PaymentPurpose, PaymentStatus, Prisma, SubscriptionStatus } from '@prisma/client';
 import axios from 'axios';
 import { PaymentsService } from './payments.service';
 
@@ -11,6 +11,7 @@ function createMocks() {
     order: { update: jest.fn() },
     giftCard: { update: jest.fn() },
     subscription: { update: jest.fn() },
+    booking: { update: jest.fn() },
   };
   prisma.$transaction = jest.fn((cb: any) => cb(prisma));
   const config: any = { get: (_k: string, d?: any) => d, getOrThrow: () => 'flw-key' };
@@ -52,6 +53,16 @@ describe('PaymentsService.verify activation', () => {
     await new PaymentsService(prisma, config, queue).verify('999');
 
     expect(prisma.subscription.update).toHaveBeenCalledWith({ where: { id: 'sub1' }, data: { status: SubscriptionStatus.ACTIVE } });
+  });
+
+  it('confirms the booking on a successful BOOKING payment', async () => {
+    const { prisma, config, queue } = createMocks();
+    prisma.payment.findUnique.mockResolvedValue({ id: 'pay1', purpose: PaymentPurpose.BOOKING, orderId: null, giftCardId: null, subscriptionId: null, bookingId: 'bk1', amount: new Prisma.Decimal(15000) });
+    mockedAxios.get.mockResolvedValue(verifyResponse(15000));
+
+    await new PaymentsService(prisma, config, queue).verify('999');
+
+    expect(prisma.booking.update).toHaveBeenCalledWith({ where: { id: 'bk1' }, data: { status: BookingStatus.CONFIRMED } });
   });
 
   it('does NOT activate anything when the amount mismatches (failed payment)', async () => {
