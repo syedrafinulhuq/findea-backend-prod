@@ -26,6 +26,19 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum RegistryType {
+  WEDDING
+  BABY
+  BIRTHDAY
+  OTHER
+}
+
+enum ReservationStatus {
+  RESERVED
+  PURCHASED
+  CANCELLED
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -88,6 +101,8 @@ model User {
   boutique             Boutique?
   serviceProvider      ServiceProvider?
   bookings             Booking[]
+  registries           Registry[]
+  registryReservations RegistryReservation[]
 }
 
 model Boutique {
@@ -201,6 +216,63 @@ model Booking {
   @@index([status])
 }
 
+model Registry {
+  id              String         @id @default(cuid())
+  ownerId         String
+  title           String
+  slug            String         @unique
+  type            RegistryType   @default(WEDDING)
+  description     String?
+  coverImageUrl   String?
+  eventDate       DateTime?
+  shippingLine1   String?
+  shippingCity    String?
+  shippingCountry String?
+  isPublic        Boolean        @default(true)
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  owner           User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  items           RegistryItem[]
+
+  @@index([ownerId])
+  @@index([type])
+}
+
+model RegistryItem {
+  id           String                @id @default(cuid())
+  registryId   String
+  productId    String
+  desiredQty   Int                   @default(1)
+  reservedQty  Int                   @default(0)
+  note         String?
+  createdAt    DateTime              @default(now())
+  registry     Registry              @relation(fields: [registryId], references: [id], onDelete: Cascade)
+  product      Product               @relation(fields: [productId], references: [id])
+  reservations RegistryReservation[]
+
+  @@unique([registryId, productId])
+  @@index([registryId])
+}
+
+model RegistryReservation {
+  id             String            @id @default(cuid())
+  registryItemId String
+  userId         String?
+  guestName      String
+  guestEmail     String
+  quantity       Int               @default(1)
+  message        String?
+  status         ReservationStatus @default(RESERVED)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  registryItem   RegistryItem      @relation(fields: [registryItemId], references: [id], onDelete: Cascade)
+  user           User?             @relation(fields: [userId], references: [id])
+
+  @@index([registryItemId])
+  @@index([userId])
+}
+
 model Address {
   id         String   @id @default(cuid())
   userId     String
@@ -252,6 +324,7 @@ model Product {
   wishlistItems WishlistItem[]
   images       ProductImage[]
   reviews      Review[]
+  registryItems RegistryItem[]
 
   @@index([boutiqueId])
 }

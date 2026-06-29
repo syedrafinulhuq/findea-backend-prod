@@ -23,6 +23,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { AdminModule } from './admin/admin.module';
 import { BoutiquesModule } from './boutiques/boutiques.module';
 import { ServicesModule } from './services/services.module';
+import { RegistriesModule } from './registries/registries.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -85,6 +86,7 @@ import { HealthModule } from './health/health.module';
     AdminModule,
     BoutiquesModule,
     ServicesModule,
+    RegistriesModule,
     HealthModule,
   ],
 })
