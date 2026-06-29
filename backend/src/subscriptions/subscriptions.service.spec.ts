@@ -11,24 +11,29 @@ function createPrismaMock() {
 
 describe('SubscriptionsService', () => {
   let prisma: ReturnType<typeof createPrismaMock>;
+  let payments: { initializeSubscription: jest.Mock };
   let service: SubscriptionsService;
 
   beforeEach(() => {
     prisma = createPrismaMock();
-    service = new SubscriptionsService(prisma);
+    payments = { initializeSubscription: jest.fn().mockResolvedValue({ checkoutUrl: 'https://pay/s' }) };
+    service = new SubscriptionsService(prisma, payments as any);
   });
 
   describe('subscribe', () => {
-    it('creates a subscription with a future currentPeriodEnd', async () => {
+    it('creates a PENDING subscription with a future currentPeriodEnd and starts payment', async () => {
       prisma.subscriptionPlan.findFirst.mockResolvedValue({ id: 'plan1', interval: 'MONTHLY' });
       prisma.subscription.findFirst.mockResolvedValue(null); // no active subscription
       prisma.subscription.create.mockImplementation(({ data }: any) => ({ id: 's1', ...data }));
 
-      await service.subscribe('u1', { planId: 'plan1' });
+      const result = await service.subscribe('u1', { planId: 'plan1' });
 
       const data = prisma.subscription.create.mock.calls[0][0].data;
       expect(data.userId).toBe('u1');
+      expect(data.status).toBe(SubscriptionStatus.PENDING);
       expect(data.currentPeriodEnd.getTime()).toBeGreaterThan(Date.now());
+      expect(result.checkoutUrl).toBe('https://pay/s');
+      expect(payments.initializeSubscription).toHaveBeenCalledWith('s1');
     });
 
     it('rejects a second active subscription', async () => {

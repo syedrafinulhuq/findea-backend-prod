@@ -22,6 +22,9 @@ export class GiftCardsController {
   @Post() purchase(@CurrentUser() user: AuthUser, @Body() dto: PurchaseGiftCardDto) { return this.giftCards.purchase(user.id, dto); }
 
   @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @Post(':id/pay') pay(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.giftCards.pay(user.id, id); }
+
+  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
   @Get('me') mine(@CurrentUser() user: AuthUser) { return this.giftCards.myGiftCards(user.id); }
 
   @ApiBearerAuth() @UseGuards(JwtAuthGuard)

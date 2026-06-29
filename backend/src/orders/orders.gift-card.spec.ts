@@ -31,7 +31,7 @@ describe('OrdersService gift card checkout', () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
     const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma), config);
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     // product price 100, qty 1 -> subtotal 100, + delivery 80 = payable 180
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(100) }]);
@@ -53,7 +53,7 @@ describe('OrdersService gift card checkout', () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
     const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma), config);
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(20) }]);
     tx.product.updateMany.mockResolvedValue({ count: 1 });
@@ -73,7 +73,7 @@ describe('OrdersService gift card checkout', () => {
     const { prisma, queue, tx } = createMocks();
     const { GiftCardsService } = require('../gift-cards/gift-cards.service');
     const config: any = { get: (_k: string, d?: any) => (_k === 'DELIVERY_FEE' ? 80 : d) };
-    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma), config);
+    const service = new OrdersService(prisma, queue, new GiftCardsService(prisma, {} as any), config);
 
     tx.product.findMany.mockResolvedValue([{ id: 'p1', name: 'Mug', price: new Prisma.Decimal(20) }]);
     tx.product.updateMany.mockResolvedValue({ count: 1 });
