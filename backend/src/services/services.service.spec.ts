@@ -14,27 +14,31 @@ function createPrismaMock() {
 
 describe('ServicesService', () => {
   let prisma: ReturnType<typeof createPrismaMock>;
+  let payments: { initializeBooking: jest.Mock };
   let service: ServicesService;
 
   beforeEach(() => {
     prisma = createPrismaMock();
-    service = new ServicesService(prisma as any);
+    payments = { initializeBooking: jest.fn().mockResolvedValue({ checkoutUrl: 'https://pay/b' }) };
+    service = new ServicesService(prisma as any, payments as any);
   });
 
   describe('book', () => {
     const future = new Date(Date.now() + 86_400_000).toISOString();
 
-    it('creates a booking with a BKG number and the service price', async () => {
+    it('creates a PENDING booking, starts payment, and returns a checkout url', async () => {
       prisma.service.findFirst.mockResolvedValue({ id: 's1', providerId: 'p1', price: new Prisma.Decimal(75) });
       prisma.booking.create.mockImplementation(({ data }: any) => ({ id: 'b1', ...data }));
 
-      await service.book('u1', { serviceId: 's1', scheduledAt: future, customerName: 'A', customerEmail: 'a@x.com' });
+      const result = await service.book('u1', { serviceId: 's1', scheduledAt: future, customerName: 'A', customerEmail: 'a@x.com' });
 
       const data = prisma.booking.create.mock.calls[0][0].data;
       expect(data.bookingNumber).toMatch(/^BKG-\d+-[0-9A-F]{6}$/);
       expect(data.providerId).toBe('p1');
       expect(data.price).toEqual(new Prisma.Decimal(75));
       expect(data.userId).toBe('u1');
+      expect(payments.initializeBooking).toHaveBeenCalledWith('b1');
+      expect(result.checkoutUrl).toBe('https://pay/b');
     });
 
     it('rejects a scheduledAt in the past', async () => {

@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { randomBytes } from 'crypto';
 import { BookingStatus, BoutiqueStatus, Prisma, Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import {
   AdminProviderQueryDto,
   CreateBookingDto,
@@ -23,7 +24,7 @@ const PUBLIC_PROVIDER_SELECT = {
 
 @Injectable()
 export class ServicesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private payments: PaymentsService) {}
 
   // ---- categories ----
 
@@ -209,8 +210,9 @@ export class ServicesService {
     const bookingNumber = `BKG-${Date.now()}-${randomBytes(3).toString('hex').toUpperCase()}`;
 
     // Reject overlapping bookings for the same provider. Check and create share
-    // a transaction to shrink (not fully eliminate) the race window.
-    return this.prisma.$transaction(async (tx) => {
+    // a transaction to shrink (not fully eliminate) the race window. The booking
+    // is created PENDING and holds the slot while payment is completed.
+    const booking = await this.prisma.$transaction(async (tx) => {
       if (await this.hasConflict(tx, service.providerId, scheduledAt, service.durationMinutes)) {
         throw new BadRequestException('That time slot is no longer available for this provider');
       }
@@ -230,6 +232,18 @@ export class ServicesService {
         include: { service: { select: { id: true, name: true } } },
       });
     });
+    // Start payment outside the transaction (it makes an external call). The
+    // booking is only CONFIRMED once payment succeeds — see PaymentsService.verify.
+    const payment = await this.payments.initializeBooking(booking.id);
+    return { booking, checkoutUrl: payment.checkoutUrl, payment };
+  }
+
+  /** Restart payment for a still-PENDING booking the customer owns. */
+  async payBooking(userId: string, bookingId: string) {
+    const booking = await this.prisma.booking.findFirst({ where: { id: bookingId, userId } });
+    if (!booking) throw new NotFoundException('Booking not found');
+    const payment = await this.payments.initializeBooking(booking.id);
+    return { booking, checkoutUrl: payment.checkoutUrl, payment };
   }
 
   /** True if the provider has an active (pending/confirmed) booking overlapping the requested slot. */
