@@ -21,6 +21,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
 import { CouponsModule } from './coupons/coupons.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { AdminModule } from './admin/admin.module';
+import { BoutiquesModule } from './boutiques/boutiques.module';
 import { HealthModule } from './health/health.module';
 
 @Module({
@@ -81,6 +82,7 @@ import { HealthModule } from './health/health.module';
     CouponsModule,
     ReviewsModule,
     AdminModule,
+    BoutiquesModule,
     HealthModule,
   ],
 })
