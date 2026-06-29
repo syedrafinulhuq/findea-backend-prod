@@ -39,6 +39,25 @@ enum ReservationStatus {
   CANCELLED
 }
 
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+  DISABLED
+}
+
+enum SubscriptionInterval {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -103,6 +122,8 @@ model User {
   bookings             Booking[]
   registries           Registry[]
   registryReservations RegistryReservation[]
+  giftCardsPurchased   GiftCard[]
+  subscriptions        Subscription[]
 }
 
 model Boutique {
@@ -271,6 +292,73 @@ model RegistryReservation {
 
   @@index([registryItemId])
   @@index([userId])
+}
+
+model GiftCard {
+  id             String                @id @default(cuid())
+  code           String                @unique
+  initialAmount  Decimal               @db.Decimal(10, 2)
+  balance        Decimal               @db.Decimal(10, 2)
+  currency       String                @default("XOF")
+  status         GiftCardStatus        @default(ACTIVE)
+  purchaserId    String?
+  senderName     String?
+  recipientName  String?
+  recipientEmail String?
+  message        String?
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  purchaser      User?                 @relation(fields: [purchaserId], references: [id])
+  transactions   GiftCardTransaction[]
+
+  @@index([purchaserId])
+  @@index([status])
+}
+
+model GiftCardTransaction {
+  id         String   @id @default(cuid())
+  giftCardId String
+  amount     Decimal  @db.Decimal(10, 2)
+  reason     String?
+  orderId    String?
+  createdAt  DateTime @default(now())
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+}
+
+model SubscriptionPlan {
+  id            String               @id @default(cuid())
+  name          String
+  slug          String               @unique
+  description   String?
+  price         Decimal              @db.Decimal(10, 2)
+  interval      SubscriptionInterval @default(MONTHLY)
+  features      String[]
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                 String             @id @default(cuid())
+  userId             String
+  planId             String
+  status             SubscriptionStatus @default(ACTIVE)
+  startedAt          DateTime           @default(now())
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean            @default(false)
+  cancelledAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan               SubscriptionPlan   @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
 }
 
 model Address {
