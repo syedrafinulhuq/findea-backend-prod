@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus, SubscriptionStatus } from '@prisma/client';
+import { BookingStatus, GiftCardStatus, OrderStatus, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 
@@ -63,5 +63,35 @@ export class JobsService {
       where: { lowStockAlert: true, stock: { gt: threshold } },
       data: { lowStockAlert: false },
     });
+  }
+
+  /**
+   * Releases checkouts abandoned before payment completed, after a grace
+   * window (PENDING_CHECKOUT_TTL_MINUTES). Pending bookings are cancelled
+   * (freeing the provider's slot), and unpaid gift cards / subscriptions are
+   * voided so they can't be activated. Pending orders are handled separately
+   * by expireOldPendingOrders.
+   */
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async cancelAbandonedCheckouts() {
+    const ttl = this.config.get<number>('PENDING_CHECKOUT_TTL_MINUTES', 60);
+    const cutoff = new Date(Date.now() - ttl * 60_000);
+    const [bookings, giftCards, subscriptions] = await this.prisma.$transaction([
+      this.prisma.booking.updateMany({
+        where: { status: BookingStatus.PENDING, createdAt: { lt: cutoff } },
+        data: { status: BookingStatus.CANCELLED, cancelReason: 'Auto-cancelled: payment not completed.' },
+      }),
+      this.prisma.giftCard.updateMany({
+        where: { status: GiftCardStatus.PENDING, createdAt: { lt: cutoff } },
+        data: { status: GiftCardStatus.DISABLED },
+      }),
+      this.prisma.subscription.updateMany({
+        where: { status: SubscriptionStatus.PENDING, createdAt: { lt: cutoff } },
+        data: { status: SubscriptionStatus.EXPIRED },
+      }),
+    ]);
+    if (bookings.count || giftCards.count || subscriptions.count) {
+      this.logger.log(`Abandoned checkouts released: ${bookings.count} bookings, ${giftCards.count} gift cards, ${subscriptions.count} subscriptions`);
+    }
   }
 }

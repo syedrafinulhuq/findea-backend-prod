@@ -58,6 +58,7 @@ import { HealthModule } from './health/health.module';
         FLUTTERWAVE_ENCRYPTION_KEY: Joi.string().optional(),
         FLUTTERWAVE_WEBHOOK_HASH: Joi.string().required(),
         LOW_STOCK_THRESHOLD: Joi.number().default(5),
+        PENDING_CHECKOUT_TTL_MINUTES: Joi.number().default(60),
         CURRENCY: Joi.string().default('XOF'),
         DELIVERY_FEE: Joi.number().default(1000),
       }),
