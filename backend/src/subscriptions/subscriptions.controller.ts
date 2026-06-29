@@ -38,5 +38,8 @@ export class SubscriptionsController {
   @Get('subscriptions/me') mine(@CurrentUser() user: AuthUser) { return this.subscriptions.mySubscriptions(user.id); }
 
   @ApiBearerAuth() @UseGuards(JwtAuthGuard)
+  @Post('subscriptions/:id/pay') pay(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.subscriptions.pay(user.id, id); }
+
+  @ApiBearerAuth() @UseGuards(JwtAuthGuard)
   @Post('subscriptions/:id/cancel') cancel(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.subscriptions.cancel(user.id, id); }
 }

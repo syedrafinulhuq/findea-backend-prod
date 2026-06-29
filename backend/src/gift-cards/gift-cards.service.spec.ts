@@ -28,26 +28,36 @@ const activeCard = (overrides: Partial<any> = {}) => ({
 
 describe('GiftCardsService', () => {
   let prisma: ReturnType<typeof createPrismaMock>;
+  let payments: { initializeGiftCard: jest.Mock };
   let service: GiftCardsService;
 
   beforeEach(() => {
     prisma = createPrismaMock();
-    service = new GiftCardsService(prisma as any);
+    payments = { initializeGiftCard: jest.fn().mockResolvedValue({ checkoutUrl: 'https://pay/x' }) };
+    service = new GiftCardsService(prisma as any, payments as any);
   });
 
   describe('purchase', () => {
-    it('generates a unique code and seeds balance from the amount', async () => {
+    it('creates a PENDING card, seeds balance, and starts a payment', async () => {
       prisma.giftCard.findUnique.mockResolvedValue(null); // code is unique on first try
       prisma.giftCard.create.mockImplementation(({ data }: any) => ({ id: 'gc1', ...data }));
 
-      const card = await service.purchase('user1', { amount: 50 });
+      const result = await service.purchase('user1', { amount: 50 });
 
-      expect(card.code).toMatch(/^GC-[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$/);
+      expect(result.giftCard.code).toMatch(/^GC-[0-9A-F]{6}-[0-9A-F]{6}-[0-9A-F]{6}$/);
+      expect(result.checkoutUrl).toBe('https://pay/x');
       const data = prisma.giftCard.create.mock.calls[0][0].data;
+      expect(data.status).toBe(GiftCardStatus.PENDING);
       expect(data.balance).toEqual(new Prisma.Decimal(50));
       expect(data.initialAmount).toEqual(new Prisma.Decimal(50));
       expect(data.purchaserId).toBe('user1');
       expect(data.transactions.create).toMatchObject({ reason: 'issued' });
+      expect(payments.initializeGiftCard).toHaveBeenCalledWith('gc1');
+    });
+
+    it('does not let a PENDING card be redeemed', async () => {
+      prisma.giftCard.findUnique.mockResolvedValue(activeCard({ status: GiftCardStatus.PENDING }));
+      await expect(service.redeem({ code: 'GC', amount: 5 })).rejects.toBeInstanceOf(BadRequestException);
     });
   });
 

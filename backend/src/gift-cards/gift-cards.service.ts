@@ -2,20 +2,27 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { randomBytes } from 'crypto';
 import { GiftCardStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { GiftCardQueryDto, PurchaseGiftCardDto, RedeemGiftCardDto } from './dto';
 
 @Injectable()
 export class GiftCardsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private payments: PaymentsService) {}
 
-  async purchase(userId: string | undefined, dto: PurchaseGiftCardDto) {
+  /**
+   * Creates the gift card in a PENDING (non-spendable) state and starts a
+   * payment. The card is only activated (made redeemable) once the payment
+   * succeeds — see PaymentsService.verify.
+   */
+  async purchase(userId: string, dto: PurchaseGiftCardDto) {
     const amount = new Prisma.Decimal(dto.amount);
     const code = await this.uniqueCode();
-    return this.prisma.giftCard.create({
+    const card = await this.prisma.giftCard.create({
       data: {
         code,
         initialAmount: amount,
         balance: amount,
+        status: GiftCardStatus.PENDING,
         purchaserId: userId,
         senderName: dto.senderName,
         recipientName: dto.recipientName,
@@ -25,6 +32,8 @@ export class GiftCardsService {
         transactions: { create: { amount, reason: 'issued' } },
       },
     });
+    const payment = await this.payments.initializeGiftCard(card.id);
+    return { giftCard: card, checkoutUrl: payment.checkoutUrl, payment };
   }
 
   /** Public balance lookup by code — exposes only non-sensitive fields. */
@@ -66,6 +75,14 @@ export class GiftCardsService {
       },
     });
     return { id: updated.id, code: updated.code, balance: updated.balance, status: updated.status, redeemed: amount };
+  }
+
+  /** Restart payment for a still-PENDING gift card the user purchased. */
+  async pay(userId: string, id: string) {
+    const card = await this.prisma.giftCard.findFirst({ where: { id, purchaserId: userId } });
+    if (!card) throw new NotFoundException('Gift card not found');
+    const payment = await this.payments.initializeGiftCard(card.id);
+    return { giftCard: card, checkoutUrl: payment.checkoutUrl, payment };
   }
 
   myGiftCards(userId: string) {

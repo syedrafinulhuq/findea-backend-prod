@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SubscriptionInterval, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreatePlanDto, SubscribeDto, UpdatePlanDto } from './dto';
 
 @Injectable()
 export class SubscriptionsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private payments: PaymentsService) {}
 
   // ---- plans (public + admin) ----
 
@@ -35,19 +36,36 @@ export class SubscriptionsService {
 
   // ---- subscriber ----
 
+  /**
+   * Creates the subscription in a PENDING state and starts a payment. It is
+   * only activated once the payment succeeds — see PaymentsService.verify.
+   */
   async subscribe(userId: string, dto: SubscribeDto) {
     const plan = await this.prisma.subscriptionPlan.findFirst({ where: { id: dto.planId, isActive: true } });
     if (!plan) throw new NotFoundException('Plan not found');
-    const active = await this.prisma.subscription.findFirst({ where: { userId, status: SubscriptionStatus.ACTIVE } });
-    if (active) throw new BadRequestException('You already have an active subscription');
-    return this.prisma.subscription.create({
+    const existing = await this.prisma.subscription.findFirst({
+      where: { userId, status: { in: [SubscriptionStatus.ACTIVE, SubscriptionStatus.PENDING] } },
+    });
+    if (existing) throw new BadRequestException('You already have an active or pending subscription');
+    const sub = await this.prisma.subscription.create({
       data: {
         userId,
         planId: plan.id,
+        status: SubscriptionStatus.PENDING,
         currentPeriodEnd: this.periodEnd(plan.interval),
       },
       include: { plan: true },
     });
+    const payment = await this.payments.initializeSubscription(sub.id);
+    return { subscription: sub, checkoutUrl: payment.checkoutUrl, payment };
+  }
+
+  /** Restart payment for a still-PENDING subscription the user owns. */
+  async pay(userId: string, id: string) {
+    const sub = await this.prisma.subscription.findFirst({ where: { id, userId }, include: { plan: true } });
+    if (!sub) throw new NotFoundException('Subscription not found');
+    const payment = await this.payments.initializeSubscription(sub.id);
+    return { subscription: sub, checkoutUrl: payment.checkoutUrl, payment };
   }
 
   mySubscriptions(userId: string) {
