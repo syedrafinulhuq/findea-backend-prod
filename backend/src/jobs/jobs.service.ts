@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueueService } from '../queue/queue.service';
 
@@ -9,6 +9,27 @@ import { QueueService } from '../queue/queue.service';
 export class JobsService {
   private readonly logger = new Logger(JobsService.name);
   constructor(private prisma: PrismaService, private config: ConfigService, private queue: QueueService) {}
+
+  /**
+   * Processes subscriptions whose billing period has ended:
+   * - those set to cancel at period end are EXPIRED
+   * - the rest are marked PAST_DUE (a renewal payment is required to stay active)
+   */
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async processSubscriptionLifecycle() {
+    const now = new Date();
+    const expired = await this.prisma.subscription.updateMany({
+      where: { status: SubscriptionStatus.ACTIVE, cancelAtPeriodEnd: true, currentPeriodEnd: { lt: now } },
+      data: { status: SubscriptionStatus.EXPIRED },
+    });
+    const pastDue = await this.prisma.subscription.updateMany({
+      where: { status: SubscriptionStatus.ACTIVE, cancelAtPeriodEnd: false, currentPeriodEnd: { lt: now } },
+      data: { status: SubscriptionStatus.PAST_DUE },
+    });
+    if (expired.count || pastDue.count) {
+      this.logger.log(`Subscription lifecycle: expired ${expired.count}, past-due ${pastDue.count}`);
+    }
+  }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async expireOldPendingOrders() {
