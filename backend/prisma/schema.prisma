@@ -311,6 +311,7 @@ model GiftCard {
   updatedAt      DateTime              @updatedAt
   purchaser      User?                 @relation(fields: [purchaserId], references: [id])
   transactions   GiftCardTransaction[]
+  orders         Order[]
 
   @@index([purchaserId])
   @@index([status])
@@ -443,8 +444,10 @@ model Order {
   subtotal        Decimal     @db.Decimal(10, 2)
   deliveryFee     Decimal     @db.Decimal(10, 2) @default(0)
   discountAmount  Decimal     @db.Decimal(10, 2) @default(0)
+  giftCardAmount  Decimal     @db.Decimal(10, 2) @default(0)
   total           Decimal     @db.Decimal(10, 2)
   couponId        String?
+  giftCardId      String?
   trackingNumber  String?
   status          OrderStatus @default(PENDING)
   cancelReason    String?
@@ -452,6 +455,7 @@ model Order {
   updatedAt       DateTime    @updatedAt
   user            User?       @relation(fields: [userId], references: [id])
   coupon          Coupon?     @relation(fields: [couponId], references: [id])
+  giftCard        GiftCard?   @relation(fields: [giftCardId], references: [id])
   items           OrderItem[]
   payment         Payment?
   reviews         Review[]

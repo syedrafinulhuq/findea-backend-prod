@@ -21,6 +21,7 @@ export class CreateOrderDto {
   @ApiProperty({ required: false }) @IsOptional() @IsString() deliveryNotes?: string;
   @ApiProperty({ required: false, enum: PaymentMethod }) @IsOptional() @IsEnum(PaymentMethod) paymentMethod?: PaymentMethod;
   @ApiProperty({ required: false }) @IsOptional() @IsString() couponCode?: string;
+  @ApiProperty({ required: false, description: 'Gift card code to apply against the order total' }) @IsOptional() @IsString() giftCardCode?: string;
   @ApiProperty({ type: [OrderItemDto] }) @IsArray() @ValidateNested({ each: true }) @Type(() => OrderItemDto) items: OrderItemDto[];
 }
 

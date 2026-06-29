@@ -38,27 +38,34 @@ export class GiftCardsService {
   }
 
   async redeem(dto: RedeemGiftCardDto) {
-    return this.prisma.$transaction(async (tx) => {
-      const card = await tx.giftCard.findUnique({ where: { code: dto.code } });
-      if (!card) throw new NotFoundException('Gift card not found');
-      if (card.status !== GiftCardStatus.ACTIVE) throw new BadRequestException(`Gift card is ${card.status.toLowerCase()}`);
-      if (card.expiresAt && card.expiresAt.getTime() < Date.now()) {
-        await tx.giftCard.update({ where: { id: card.id }, data: { status: GiftCardStatus.EXPIRED } });
-        throw new BadRequestException('Gift card has expired');
-      }
-      const amount = new Prisma.Decimal(dto.amount);
-      if (amount.greaterThan(card.balance)) throw new BadRequestException(`Insufficient balance: ${card.balance.toString()} remaining`);
-      const newBalance = card.balance.minus(amount);
-      const updated = await tx.giftCard.update({
-        where: { id: card.id },
-        data: {
-          balance: newBalance,
-          status: newBalance.isZero() ? GiftCardStatus.REDEEMED : GiftCardStatus.ACTIVE,
-          transactions: { create: { amount: amount.negated(), reason: dto.reason ?? 'redeemed', orderId: dto.orderId } },
-        },
-      });
-      return { code: updated.code, balance: updated.balance, status: updated.status, redeemed: amount };
+    return this.prisma.$transaction((tx) => this.redeemTx(tx, dto.code, new Prisma.Decimal(dto.amount), dto.orderId, dto.reason));
+  }
+
+  /**
+   * Deducts `amount` from a gift card's balance within an existing transaction.
+   * Validates status/expiry/balance and records a ledger entry. Use this from
+   * other flows (e.g. checkout) so the deduction shares the caller's transaction.
+   */
+  async redeemTx(tx: Prisma.TransactionClient, code: string, amount: Prisma.Decimal, orderId?: string, reason?: string) {
+    const card = await tx.giftCard.findUnique({ where: { code } });
+    if (!card) throw new NotFoundException('Gift card not found');
+    if (card.status !== GiftCardStatus.ACTIVE) throw new BadRequestException(`Gift card is ${card.status.toLowerCase()}`);
+    if (card.expiresAt && card.expiresAt.getTime() < Date.now()) {
+      await tx.giftCard.update({ where: { id: card.id }, data: { status: GiftCardStatus.EXPIRED } });
+      throw new BadRequestException('Gift card has expired');
+    }
+    if (amount.lessThanOrEqualTo(0)) throw new BadRequestException('Redemption amount must be positive');
+    if (amount.greaterThan(card.balance)) throw new BadRequestException(`Insufficient balance: ${card.balance.toString()} remaining`);
+    const newBalance = card.balance.minus(amount);
+    const updated = await tx.giftCard.update({
+      where: { id: card.id },
+      data: {
+        balance: newBalance,
+        status: newBalance.isZero() ? GiftCardStatus.REDEEMED : GiftCardStatus.ACTIVE,
+        transactions: { create: { amount: amount.negated(), reason: reason ?? 'redeemed', orderId } },
+      },
     });
+    return { id: updated.id, code: updated.code, balance: updated.balance, status: updated.status, redeemed: amount };
   }
 
   myGiftCards(userId: string) {
