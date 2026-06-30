@@ -15,6 +15,10 @@ export class ReviewsController {
 
   @Get('product/:productId') forProduct(@Param('productId') productId: string) { return this.reviews.forProduct(productId); }
 
+  @Get('boutique/:boutiqueId') forBoutique(@Param('boutiqueId') boutiqueId: string) { return this.reviews.forBoutique(boutiqueId); }
+
+  @Get('provider/:serviceProviderId') forProvider(@Param('serviceProviderId') serviceProviderId: string) { return this.reviews.forProvider(serviceProviderId); }
+
   @ApiBearerAuth() @UseGuards(JwtAuthGuard)
   @Post() create(@CurrentUser() user: JwtUser, @Body() dto: CreateReviewDto) { return this.reviews.create(user.id, dto); }
 
